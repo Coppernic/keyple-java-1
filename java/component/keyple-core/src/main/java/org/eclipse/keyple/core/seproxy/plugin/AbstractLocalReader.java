@@ -256,6 +256,7 @@ public abstract class AbstractLocalReader extends AbstractObservableReader {
     private ApduResponse openChannelForAidHackGetData(SeSelector.AidSelector aidSelector)
             throws KeypleApplicationSelectionException, KeypleIOReaderException,
             KeypleChannelStateException {
+        logger.debug("openChannelForAidHackGetData");
         SeSelector.AidSelector noResponseAidSelector = new SeSelector.AidSelector(
                 aidSelector.getAidToSelect(), aidSelector.getSuccessfulSelectionStatusCodes(),
                 aidSelector.getFileOccurrence(),
@@ -669,6 +670,7 @@ public abstract class AbstractLocalReader extends AbstractObservableReader {
      */
     private SeResponse processSeRequestLogical(SeRequest seRequest)
             throws IllegalStateException, KeypleReaderException {
+        logger.debug("processSeRequestLogical");
         boolean previouslyOpen = true;
         SelectionStatus selectionStatus = null;
 
@@ -807,6 +809,7 @@ public abstract class AbstractLocalReader extends AbstractObservableReader {
      */
     protected final ApduResponse processApduRequest(ApduRequest apduRequest)
             throws KeypleIOReaderException {
+        logger.debug("processApduRequest");
         ApduResponse apduResponse;
         if (logger.isTraceEnabled()) {
             long timeStamp = System.nanoTime();
@@ -847,6 +850,7 @@ public abstract class AbstractLocalReader extends AbstractObservableReader {
      */
     private ApduResponse case4HackGetResponse(int originalStatusCode)
             throws KeypleIOReaderException {
+        logger.debug("case4HackGetResponse");
         /*
          * build a get response command the actual length expected by the SE in the get response
          * command is handled in transmitApdu

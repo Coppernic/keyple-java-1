@@ -16,6 +16,8 @@ import org.eclipse.keyple.core.seproxy.exception.NoStackTraceThrowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.rmi.runtime.Log;
+
 /**
  * Abstract definition of an threader local reader. Factorizes the observation mechanism through the
  * implementation of a monitoring thread.
@@ -41,6 +43,7 @@ public abstract class AbstractThreadedLocalReader extends AbstractSelectionLocal
      */
     @Override
     protected void startObservation() {
+        logger.debug("startObservation");
         thread = new EventThread(this.getPluginName(), this.getName());
         thread.start();
     }
@@ -50,6 +53,7 @@ public abstract class AbstractThreadedLocalReader extends AbstractSelectionLocal
      */
     @Override
     protected void stopObservation() {
+        logger.debug("stopObservation");
         thread.end();
     }
 
