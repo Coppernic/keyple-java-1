@@ -17,7 +17,7 @@ apply from: '../common.gradle'
 subprojects {
 
     group 'org.eclipse.keyple'
-    apply plugin: 'pmd'
+    //apply plugin: 'pmd'
 
 
     repositories {
@@ -39,7 +39,7 @@ subprojects {
                 "java-braces",
         ]
     }
-    
+
 }
 
 
@@ -70,6 +70,7 @@ aggregatedJavadocs.doFirst {
     //add Android modules javadoc
     def aggregatedAndroidProjects = [
                                   project(":keyple-plugin:keyple-plugin-android-nfc"),
+                                  project(":keyple-plugin:keyple-plugin-android-cone2"),
                                   project(":keyple-plugin:keyple-plugin-android-omapi")]
 
     aggregatedAndroidProjects.each { aggregatedAndroidProject ->
