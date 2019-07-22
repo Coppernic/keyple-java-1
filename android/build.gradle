@@ -22,7 +22,7 @@ subprojects {
     */
 
     group 'org.eclipse.keyple'
-    apply plugin: 'pmd'
+    //apply plugin: 'pmd'
 
 
     repositories {
@@ -38,33 +38,33 @@ subprojects {
     }
 
 
-    pmd {
-        ruleSets = [
-                "java-basic",
-                "java-braces",
-                "java-strings",
-                "java-imports",
-                "java-unnecessary",
-                "java-unusedcode",
-//                "java-metrics",
-                "java-empty",
-                "java-codesize",
-                "java-clone",
-                "java-typeresolution",
-                "java-strictexception",
-                "java-finalizers",
-                "java-migrating",
-                "java-logging-java",
-//                 "java-controversial",
-                "java-sunsecure",
-                "java-junit",
-                "java-optimizations",
-//                "java-naming",
-                "java-coupling",
-                "java-design",
-                "java-comments"
-        ]
-    }
+//    pmd {
+//        ruleSets = [
+//                "java-basic",
+//                "java-braces",
+//                "java-strings",
+//                "java-imports",
+//                "java-unnecessary",
+//                "java-unusedcode",
+////                "java-metrics",
+//                "java-empty",
+//                "java-codesize",
+//                "java-clone",
+//                "java-typeresolution",
+//                "java-strictexception",
+//                "java-finalizers",
+//                "java-migrating",
+//                "java-logging-java",
+////                 "java-controversial",
+//                "java-sunsecure",
+//                "java-junit",
+//                "java-optimizations",
+////                "java-naming",
+//                "java-coupling",
+//                "java-design",
+//                "java-comments"
+//        ]
+//    }
 
 
 //    spotless {
@@ -124,6 +124,7 @@ aggregatedJavadocs.doFirst {
     //add Android modules javadoc
     def aggregatedAndroidProjects = [
                                   project(":keyple-plugin:keyple-plugin-android-nfc"),
+                                  project(":keyple-plugin:keyple-plugin-android-cone2"),
                                   project(":keyple-plugin:keyple-plugin-android-omapi")]
 
     aggregatedAndroidProjects.each { aggregatedAndroidProject ->

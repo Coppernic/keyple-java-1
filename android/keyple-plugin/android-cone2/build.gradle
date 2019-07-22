@@ -2,29 +2,23 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
 
-group 'org.eclipse.keyple'
+project.group 'org.eclipse.keyple'
 project.version = '0.7.0'+'-'+ timestamp+ '-SNAPSHOT'
 
-
-
-
-//pmd {
-//    ruleSets = [
-//            "java-basic",
-//            "java-braces",
-//    ]
-//}
-
-
+repositories {
+    println "test"
+    maven { url 'https://artifactory.coppernic.fr/artifactory/libs-release'}
+}
 
 android {
     compileSdkVersion 26
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 21
+        targetSdkVersion 26
         versionName project.version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -32,7 +26,7 @@ android {
             minifyEnabled false
         }
     }
-    
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_6
         targetCompatibility JavaVersion.VERSION_1_6
@@ -61,7 +55,7 @@ android {
     libraryVariants.all { variant ->
         task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
             description "Generates Javadoc for variant ${variant.name.capitalize()}"
-            println "Generates Javadoc for variant ${variant.name.capitalize()}"
+            println "Create Javadoc Task for variant ${variant.name.capitalize()}"
 
             source = variant.javaCompile.source
             options.links("http://docs.oracle.com/javase/6/docs/api/")
@@ -90,7 +84,9 @@ android {
 
     }
 
+
 }
+
 
 task androidSourcesJar(type: Jar) {
     classifier = 'sources'
@@ -183,35 +179,51 @@ repositories {
     jcenter()
 }
 
-dependencies {
-    implementation fileTree(include: ['*.jar'], exclude: ['org.simalliance.openmobileapi.jar'], dir: 'libs')
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        def requested = details.requested
+        println requested
+        if (requested.group == 'com.android.support') {
+            if (!requested.name.startsWith("multidex")) {
+                println "version ${android_support_version}"
+                details.useVersion "${android_support_version}"
+            }
+        }
+    }
+}
 
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation project(path:':java:component:keyple-core')
 
     implementation "com.android.support:support-v4:${android_support_version}"
     implementation "com.android.support:appcompat-v7:${android_support_version}"
+    implementation 'com.android.support:multidex:1.0.3'
 
     implementation "org.slf4j:slf4j-api:${slf4japi_version}"
 
-    implementation project(path:":java:component:keyple-core")
+    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.4.1'
+    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.2'
+    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.17.2'
 
-    compileOnly files('libs/org.simalliance.openmobileapi.jar')
     /*
     Tests
-     *
+     */
 
-    /** Test **/
     //testImplementation group: 'org.eclipse.keyple', name: 'keyple-calypso', version: '1.0.0-RC4'
     testImplementation project(path:':java:component:keyple-calypso')
 
-    testImplementation files('libs/org.simalliance.openmobileapi.jar')
-
     /**Power mock**/
-    androidTestImplementation "org.mockito:mockito-android:${mockito_android_version}"
-    androidTestImplementation "org.powermock:powermock-api-mockito:${powermock_version}"
-    androidTestImplementation "org.powermock:powermock-module-junit4:${powermock_version}"
-
     testImplementation "junit:junit:${junit_version}"
     testImplementation "org.powermock:powermock-api-mockito:${powermock_version}"
     testImplementation "org.powermock:powermock-module-junit4:${powermock_version}"
     /**End of power mock **/
+
+
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
