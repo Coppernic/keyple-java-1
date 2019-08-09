@@ -27,6 +27,27 @@ public class AndroidCone2Parameters {
      * Default value for FUNCTION_TIMEOUT parameter
      */
     public static final String FUNCTION_TIMEOUT_DEFAULT = "5000";
+    /**
+     * This parameter sets the reader that will be used to send commands to
+     */
+    public static final String ACTIVE_READER_KEY = "ACTIVE_READER_KEY";
+    /**
+     * Default value for ACTIVE_READER parameter
+     */
+    public static final String ACTIVE_READER_DEFAULT = "CONTACTLESS";
+    /**
+     * Set this value when communicating with contactless reader
+     */
+    public static final String ACTIVE_READER_CONTACTLESS_VALUE = "CONTACTLESS";
+    /**
+     * Set this value when communicating with SAM1 reader
+     */
+    public static final String ACTIVE_READER_SAM1_VALUE = "SAM1";
+    /**
+     * Set this value when communicating with SAM2 reader
+     */
+    public static final String ACTIVE_READER_SAM2_VALUE = "SAM2";
+
 
     /**
      * Gets a parameter stored as String and converts it to Integer.

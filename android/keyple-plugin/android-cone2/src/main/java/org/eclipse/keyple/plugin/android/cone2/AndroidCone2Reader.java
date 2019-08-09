@@ -68,7 +68,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
     /**
      * Private constructor
      */
-    private AndroidCone2Reader(Reader reader) {
+    private AndroidCone2Reader() {
         super(PLUGIN_NAME, READER_NAME);
 
         // We set parameters to default values
@@ -76,12 +76,14 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
                 AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_DEFAULT);
         parameters.put(AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_KEY,
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT);
+        parameters.put(AndroidCone2Parameters.ACTIVE_READER_KEY,
+                AndroidCone2Parameters.ACTIVE_READER_DEFAULT);
 
         setThreadWaitTimeout(AndroidCone2Parameters.getIntParam(parameters,
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_KEY,
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT));
 
-        this.reader = reader;
+        this.reader = AndroidCone2AskReader.getInstance();
     }
 
     private static AndroidCone2Reader instance;
@@ -89,9 +91,9 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
     /**
      * Access point for the unique instance of singleton
      */
-    static AndroidCone2Reader getInstance(Reader reader) {
+    static AndroidCone2Reader getInstance() {
         if (instance == null) {
-            instance = new AndroidCone2Reader(reader);
+            instance = new AndroidCone2Reader();
         }
 
         return instance;

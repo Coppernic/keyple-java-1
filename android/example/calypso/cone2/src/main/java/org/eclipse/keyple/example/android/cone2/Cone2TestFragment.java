@@ -9,7 +9,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.keyple.example.android.nfc;
+package org.eclipse.keyple.example.android.cone2;
 
 
 
@@ -38,7 +38,6 @@ import org.eclipse.keyple.core.seproxy.plugin.AbstractStaticPlugin;
 import org.eclipse.keyple.core.seproxy.protocol.SeCommonProtocols;
 import org.eclipse.keyple.core.util.ByteArrayUtil;
 import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Factory;
-import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Plugin;
 import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Reader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +55,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import fr.coppernic.sdk.ask.Reader;
 import fr.coppernic.sdk.power.impl.cone.ConePeripheral;
 import fr.coppernic.sdk.utils.core.CpcResult;
-import fr.coppernic.sdk.utils.io.InstanceListener;
 import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -69,26 +66,24 @@ import io.reactivex.schedulers.Schedulers;
  * Test the Keyple NFC Plugin Configure the NFC seReader Configure the Observability Run test commands
  * when appropriate tag is detected.
  */
-public class NFCTestFragment extends Fragment implements ObservableReader.ReaderObserver {
+public class Cone2TestFragment extends Fragment implements ObservableReader.ReaderObserver {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NFCTestFragment.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Cone2TestFragment.class);
 
-    private static final String TAG = NFCTestFragment.class.getSimpleName();
+    private static final String TAG = Cone2TestFragment.class.getSimpleName();
     private static final String TAG_NFC_ANDROID_FRAGMENT =
             "org.eclipse.keyple.plugin.android.nfc.AndroidNfcFragment";
 
     // UI
     private TextView mText;
 
-    private Reader reader;
-    private AbstractStaticPlugin plugin;
     private SeReader seReader;
     private SeSelection seSelection;
     private int readEnvironmentParserIndex;
 
 
-    public static NFCTestFragment newInstance() {
-        return new NFCTestFragment();
+    public static Cone2TestFragment newInstance() {
+        return new Cone2TestFragment();
     }
 
     @Override
@@ -103,9 +98,9 @@ public class NFCTestFragment extends Fragment implements ObservableReader.Reader
 
         // Define UI components
         View view =
-                inflater.inflate(org.eclipse.keyple.example.android.nfc.R.layout.fragment_nfc_test,
+                inflater.inflate(org.eclipse.keyple.example.android.cone2.R.layout.fragment_nfc_test,
                         container, false);
-        mText = view.findViewById(org.eclipse.keyple.example.android.nfc.R.id.text);
+        mText = view.findViewById(org.eclipse.keyple.example.android.cone2.R.id.text);
         mText.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
@@ -138,8 +133,7 @@ public class NFCTestFragment extends Fragment implements ObservableReader.Reader
 
                         AndroidCone2Factory.getPlugin(getContext(), new AndroidCone2Factory.PluginFactoryListener() {
                                     @Override
-                                    public void onInstantiated(AbstractStaticPlugin plugin) {
-                                        NFCTestFragment.this.plugin = plugin;
+                                    public void onInstanceAvailable(AbstractStaticPlugin plugin) {
                                         SeProxyService seProxyService = SeProxyService.getInstance();
                                         SortedSet<ReaderPlugin> plugins = new ConcurrentSkipListSet<ReaderPlugin>();
                                         plugins.add(plugin);
@@ -150,7 +144,7 @@ public class NFCTestFragment extends Fragment implements ObservableReader.Reader
                                             LOG.debug("Define this view as an observer for ReaderEvents");
                                             seReader = seProxyService.getPlugins().first().getReaders().first();
                                             /* remove the observer if it already exist */
-                                            ((ObservableReader) seReader).addObserver(NFCTestFragment.this);
+                                            ((ObservableReader) seReader).addObserver(Cone2TestFragment.this);
 
                                             /*
                                              * Prepare a Calypso PO selection
@@ -205,7 +199,12 @@ public class NFCTestFragment extends Fragment implements ObservableReader.Reader
                                             e.printStackTrace();
                                         }
                                     }
-                                });
+
+                            @Override
+                            public void onError(int error) {
+                                // TODO Display error message
+                            }
+                        });
                     }
 
                     @Override
