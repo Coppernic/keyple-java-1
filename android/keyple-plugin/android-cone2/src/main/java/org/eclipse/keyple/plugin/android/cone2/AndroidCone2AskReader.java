@@ -1,6 +1,8 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -14,9 +16,9 @@ import fr.coppernic.sdk.utils.io.InstanceListener;
  * The purpose of provideing only one instance is to share the uniqueAskReaderInstance between contactless and
  * contact interfaces.
  */
-public class AndroidCone2AskReader {
+class AndroidCone2AskReader {
     // The unique reader instance for whole API
-    private static WeakReference<Reader> uniqueAskReaderInstance;
+    private static WeakReference<Reader> uniqueAskReaderInstance = new WeakReference<Reader>(null);
 
     // Interface needed because the instantiation of the Reader instance is asynchronous.
     public interface ReaderListener {
@@ -29,28 +31,37 @@ public class AndroidCone2AskReader {
      * @param context A context
      * @param listener ReaderListener, needed because the instantiation is asynchronous
      */
+    @NonNull
     public static void getInstance(Context context, final ReaderListener listener) {
         // If uniqueAskReaderInstance is null, instantiates it
         if (uniqueAskReaderInstance.get() == null) {
             Reader.getInstance(context, new InstanceListener<Reader>() {
                 @Override
                 public void onCreated(Reader reader) {
-                    // Stores the instance
-                    AndroidCone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
+
                     // Opens reader
-                    AndroidCone2AskReader.uniqueAskReaderInstance.get().cscOpen(
+                    int ret = reader.cscOpen(
                             CpcDefinitions.ASK_READER_PORT,
                             115200,
                             false);
+
+                    if (ret != Defines.RCSC_Ok) {
+                        listener.onError(ret);
+                    }
+
                     // Initializes reader
                     StringBuilder sb = new StringBuilder();
-                    int ret = AndroidCone2AskReader.uniqueAskReaderInstance.get().cscVersionCsc(sb);
-                    if (ret == Defines.RCSC_Ok) {
+                    ret = reader.cscVersionCsc(sb);
+
+                    // Stores the instance
+                    AndroidCone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
+
+                    if (ret != Defines.RCSC_Ok) {
+                        listener.onError(ret);
+                    } else {
                         listener.onInstanceAvailable(AndroidCone2AskReader
                                 .uniqueAskReaderInstance
                                 .get());
-                    } else {
-                        listener.onError(ret);
                     }
                 }
 
@@ -63,5 +74,21 @@ public class AndroidCone2AskReader {
             // Or provides the current instance
             listener.onInstanceAvailable(uniqueAskReaderInstance.get());
         }
+    }
+
+
+    /**
+     * Returns the unique instance of ASK reader. This should not be called as long as
+     * getInstance(Context context, final ReaderListener listener) has nor successfully executed.
+     * @return Unique Reader instance
+     */
+    @Nullable
+    public static Reader getInstance() {
+        return uniqueAskReaderInstance.get();
+    }
+
+    public static void clearInstance () {
+        uniqueAskReaderInstance.get().cscClose();
+        uniqueAskReaderInstance = null;
     }
 }

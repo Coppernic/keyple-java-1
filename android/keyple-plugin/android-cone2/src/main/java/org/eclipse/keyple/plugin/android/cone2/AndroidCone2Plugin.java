@@ -45,18 +45,15 @@ public final class AndroidCone2Plugin extends AbstractStaticPlugin {
 
     private final Map<String, String> parameters = new HashMap<String, String>();// not in use in this
 
-    private static Reader reader;
-
     // plugin
 
-    private AndroidCone2Plugin(Reader reader) {
+    private AndroidCone2Plugin() {
         super(PLUGIN_NAME);
     }
 
-    public static AndroidCone2Plugin getInstance(Reader reader) {
-        AndroidCone2Plugin.reader = reader;
+    public static AndroidCone2Plugin getInstance() {
         if (uniqueInstance == null) {
-            uniqueInstance = new AndroidCone2Plugin(reader);
+            uniqueInstance = new AndroidCone2Plugin();
         }
 
         return uniqueInstance;
@@ -86,7 +83,7 @@ public final class AndroidCone2Plugin extends AbstractStaticPlugin {
         LOG.debug("InitNativeReader() add the unique instance of AndroidNfcReader");
         // return the only one reader in a list
         SortedSet<AbstractObservableReader> readers = new TreeSet<AbstractObservableReader>();
-        readers.add(AndroidCone2Reader.getInstance(reader));
+        readers.add(AndroidCone2Reader.getInstance());
         return readers;
     }
 
