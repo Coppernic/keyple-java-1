@@ -45,6 +45,9 @@ allprojects {
         google()
         jcenter()
         maven { url 'https://artifactory.coppernic.fr/artifactory/libs-release'}
+        flatDir {
+            dirs 'libs'
+        }
     }
 
     apply plugin: 'pmd'
@@ -113,6 +116,7 @@ android {
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
+        exclude 'META-INF/keyple-core.properties'
     }
 
 }
@@ -130,9 +134,10 @@ dependencies {
     /*
     Keyple dependencies
      */
-    implementation project(path:':java:component:keyple-calypso')
-    implementation project(path:':java:component:keyple-core')
-    implementation project(path:':keyple-plugin:android-cone2')
+//    implementation project(path:':java:component:keyple-calypso')
+//    implementation project(path:':java:component:keyple-core')
+    //implementation project(path:':keyple-plugin:android-cone2')
+    implementation (name:'android-cone2-0.7.0-20190809-SNAPSHOT', ext:'aar')
     
     /*
     Android components
