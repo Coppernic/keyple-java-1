@@ -117,6 +117,7 @@ android {
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
         exclude 'META-INF/keyple-core.properties'
+        exclude 'META-INF/lib_release.kotlin_module'
     }
 
 }
@@ -140,7 +141,7 @@ dependencies {
 //    implementation project(path:':java:component:keyple-calypso')
 //    implementation project(path:':java:component:keyple-core')
     //implementation project(path:':keyple-plugin:android-cone2')
-    implementation (name:'keyple-plugin-android-cone2-0.7.0-20190819-SNAPSHOT', ext:'aar')
+    implementation (name:'keyple-plugin-android-cone2-0.7.0-20190827-SNAPSHOT', ext:'aar')
     
     /*
     Android components
@@ -150,10 +151,9 @@ dependencies {
     implementation "com.android.support:design:${android_support_version}"
     implementation "com.android.support.constraint:constraint-layout:${android_support_constraint_version}"
 
-    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.4.1'
-    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.2'
-    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.17.2'
-
+    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.5.3-keeple'
+    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.14'
+    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.18.4'
 
     /*
     Log
@@ -161,7 +161,9 @@ dependencies {
     //slf4j logback for android - https://github.com/tony19/logback-android
     implementation "org.slf4j:slf4j-api:${slf4japi_version}"
     implementation "com.github.tony19:logback-android:${android_logback_version}"
-
+    // Timber
+    implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation 'fr.bipi.treessence:treessence:0.3.0'
 
     /*
     Test
