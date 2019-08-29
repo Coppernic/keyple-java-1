@@ -256,8 +256,9 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
                 apduAnswer = new byte[2];
                 LOG.error("Error, empty answer");
             } else {
-                apduAnswer = new byte[length];
-                System.arraycopy(dataReceived, 0, apduAnswer, 0, apduAnswer.length);
+                // first byte is always length value. We can ignore it
+                apduAnswer = new byte[length-1];
+                System.arraycopy(dataReceived, 1, apduAnswer, 0, apduAnswer.length);
             }
         } finally {
             isTransmitting.unlock();
