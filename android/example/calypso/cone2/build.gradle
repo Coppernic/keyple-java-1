@@ -88,7 +88,7 @@ android {
     }
     compileSdkVersion 26
     defaultConfig {
-        applicationId "org.eclipse.keyple.example.android.nfc"
+        applicationId "org.eclipse.keyple.example.android.cone2"
         minSdkVersion 19
         targetSdkVersion 26
         multiDexEnabled true
