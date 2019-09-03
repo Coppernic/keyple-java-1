@@ -40,9 +40,9 @@ import fr.coppernic.sdk.ask.sCARD_SearchExt;
  * Coppernic C-One 2 device
  *
  */
-public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
+final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implements Cone2ContactLessReader {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AndroidCone2Reader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AndroidCone2ReaderImpl.class);
 
     private static final String READER_NAME = "AndroidCone2Reader";
     private static final String PLUGIN_NAME = "AndroidCone2Plugin";
@@ -68,7 +68,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
     /**
      * Private constructor
      */
-    private AndroidCone2Reader() {
+    AndroidCone2ReaderImpl(Reader reader) {
         super(PLUGIN_NAME, READER_NAME);
 
         // We set parameters to default values
@@ -83,20 +83,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_KEY,
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT));
 
-        this.reader = AndroidCone2AskReader.getInstance();
-    }
-
-    private static AndroidCone2Reader instance;
-
-    /**
-     * Access point for the unique instance of singleton
-     */
-    static AndroidCone2Reader getInstance() {
-        if (instance == null) {
-            instance = new AndroidCone2Reader();
-        }
-
-        return instance;
+        this.reader = reader;
     }
 
     @Override
@@ -301,7 +288,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
                 @Override
                 public void onTagDiscovered(RfidTag rfidTag) {
                     LOG.debug("Tag discovered");
-                    AndroidCone2Reader.this.rfidTag = rfidTag;
+                    AndroidCone2ReaderImpl.this.rfidTag = rfidTag;
                     isCardDiscovered.set(true);
                 }
 

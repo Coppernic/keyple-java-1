@@ -26,10 +26,10 @@ import static org.junit.Assert.*;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class AndroidCone2ReaderAndroidTest {
+public class AndroidCone2ReaderAndroidTestImpl {
 
     private Context context;
-    private AndroidCone2Reader reader;
+    private AndroidCone2ReaderImpl reader;
 
     @Before
     public void before() {
@@ -44,8 +44,8 @@ public class AndroidCone2ReaderAndroidTest {
             public void onCreated(Reader reader) {
                 reader.cscOpen("/dev/ttyHSL1", 115200, false);
                 reader.cscVersionCsc(new StringBuilder());
-                AndroidCone2ReaderAndroidTest.this.reader = AndroidCone2Reader.getInstance(reader);
-                AndroidCone2ReaderAndroidTest.this.reader.startPolling();
+                AndroidCone2ReaderAndroidTestImpl.this.reader = AndroidCone2ReaderImpl.getInstance(reader);
+                AndroidCone2ReaderAndroidTestImpl.this.reader.startPolling();
             }
 
             @Override

@@ -13,34 +13,6 @@ package org.eclipse.keyple.example.android.cone2;
 
 
 
-import java.util.SortedSet;
-import java.util.concurrent.ConcurrentSkipListSet;
-import org.eclipse.keyple.calypso.command.po.parser.ReadDataStructure;
-import org.eclipse.keyple.calypso.command.po.parser.ReadRecordsRespPars;
-import org.eclipse.keyple.calypso.transaction.CalypsoPo;
-import org.eclipse.keyple.calypso.transaction.PoResource;
-import org.eclipse.keyple.calypso.transaction.PoSelectionRequest;
-import org.eclipse.keyple.calypso.transaction.PoSelector;
-import org.eclipse.keyple.calypso.transaction.PoTransaction;
-import org.eclipse.keyple.core.selection.SeSelection;
-import org.eclipse.keyple.core.selection.SelectionsResult;
-import org.eclipse.keyple.core.seproxy.ChannelState;
-import org.eclipse.keyple.core.seproxy.ReaderPlugin;
-import org.eclipse.keyple.core.seproxy.SeProxyService;
-import org.eclipse.keyple.core.seproxy.SeReader;
-import org.eclipse.keyple.core.seproxy.SeSelector;
-import org.eclipse.keyple.core.seproxy.event.AbstractDefaultSelectionsResponse;
-import org.eclipse.keyple.core.seproxy.event.ObservableReader;
-import org.eclipse.keyple.core.seproxy.event.ReaderEvent;
-import org.eclipse.keyple.core.seproxy.exception.KeypleBaseException;
-import org.eclipse.keyple.core.seproxy.exception.KeypleReaderException;
-import org.eclipse.keyple.core.seproxy.plugin.AbstractStaticPlugin;
-import org.eclipse.keyple.core.seproxy.protocol.SeCommonProtocols;
-import org.eclipse.keyple.core.util.ByteArrayUtil;
-import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Factory;
-import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Reader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -55,11 +27,39 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import org.eclipse.keyple.calypso.command.po.parser.ReadDataStructure;
+import org.eclipse.keyple.calypso.command.po.parser.ReadRecordsRespPars;
+import org.eclipse.keyple.calypso.transaction.CalypsoPo;
+import org.eclipse.keyple.calypso.transaction.PoResource;
+import org.eclipse.keyple.calypso.transaction.PoSelectionRequest;
+import org.eclipse.keyple.calypso.transaction.PoSelector;
+import org.eclipse.keyple.calypso.transaction.PoTransaction;
+import org.eclipse.keyple.core.selection.SeSelection;
+import org.eclipse.keyple.core.selection.SelectionsResult;
+import org.eclipse.keyple.core.seproxy.ChannelState;
+import org.eclipse.keyple.core.seproxy.SeProxyService;
+import org.eclipse.keyple.core.seproxy.SeReader;
+import org.eclipse.keyple.core.seproxy.SeSelector;
+import org.eclipse.keyple.core.seproxy.event.AbstractDefaultSelectionsResponse;
+import org.eclipse.keyple.core.seproxy.event.ObservableReader;
+import org.eclipse.keyple.core.seproxy.event.ReaderEvent;
+import org.eclipse.keyple.core.seproxy.exception.KeypleBaseException;
+import org.eclipse.keyple.core.seproxy.exception.KeypleReaderException;
+import org.eclipse.keyple.core.seproxy.protocol.SeCommonProtocols;
+import org.eclipse.keyple.core.util.ByteArrayUtil;
+import org.eclipse.keyple.plugin.android.cone2.AndroidCone2AskReaderFactory;
+import org.eclipse.keyple.plugin.android.cone2.AndroidCone2AskReaderFactory.ReaderListener;
+import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Factory;
+import org.eclipse.keyple.plugin.android.cone2.Cone2ContactLessReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import fr.coppernic.sdk.ask.Reader;
+import fr.coppernic.sdk.power.PowerManager;
+import fr.coppernic.sdk.power.api.PowerListener;
+import fr.coppernic.sdk.power.api.peripheral.Peripheral;
 import fr.coppernic.sdk.power.impl.cone.ConePeripheral;
 import fr.coppernic.sdk.utils.core.CpcResult;
-import io.reactivex.SingleObserver;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 
 /**
@@ -114,127 +114,51 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
         return view;
     }
 
+    private final PowerListener powerListener = new PowerListener() {
+        @Override
+        public void onPowerUp(CpcResult.RESULT res, Peripheral peripheral) {
+            // [2] Get an instance of Reader class
+            AndroidCone2AskReaderFactory.getInstance(getActivity(),readerListener);
+        }
+
+        @Override
+        public void onPowerDown(CpcResult.RESULT res, Peripheral peripheral) {
+
+        }
+    };
+
+    private final ReaderListener readerListener = new ReaderListener() {
+        @Override
+        public void onInstanceAvailable(Reader reader) {
+            // [3] We can create a plugin factory
+            AndroidCone2Factory pluginFactory = new AndroidCone2Factory(reader);
+
+            // [4] And then start keyple
+            createPlugin(pluginFactory);
+        }
+
+        @Override
+        public void onError(int i) {
+
+        }
+    };
+
     @Override
     public void onStart() {
         super.onStart();
 
-        // Powers on RFID seReader
-        ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(getContext(), true).subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<CpcResult.RESULT>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
+        PowerManager.get().registerListener(powerListener);
 
-                    }
-
-                    @Override
-                    public void onSuccess(CpcResult.RESULT result) {
-                        // 1 - First initialize SEProxy with Android Plugin
-                        LOG.debug("Initialize SEProxy with Android Plugin");
-
-                        AndroidCone2Factory.getPlugin(getContext(), new AndroidCone2Factory.PluginFactoryListener() {
-                                    @Override
-                                    public void onInstanceAvailable(AbstractStaticPlugin plugin) {
-                                        SeProxyService seProxyService = SeProxyService.getInstance();
-                                        SortedSet<ReaderPlugin> plugins = new ConcurrentSkipListSet<ReaderPlugin>();
-                                        plugins.add(plugin);
-                                        seProxyService.setPlugins(plugins);
-
-                                        try {
-                                            // define task as an observer for ReaderEvents
-                                            LOG.debug("Define this view as an observer for ReaderEvents");
-                                            seReader = seProxyService.getPlugins().first().getReaders().first();
-                                            /* remove the observer if it already exist */
-                                            ((ObservableReader) seReader).addObserver(Cone2TestFragment.this);
-
-                                            /*
-                                             * Prepare a Calypso PO selection
-                                             */
-                                            seSelection = new SeSelection();
-
-                                            /*
-                                             * Setting of an AID based selection of a Calypso REV3 PO
-                                             *
-                                             * Select the first application matching the selection AID whatever the SE communication
-                                             * protocol keep the logical channel open after the selection
-                                             */
-
-                                            /*
-                                             * Calypso selection: configures a PoSelector with all the desired attributes to make
-                                             * the selection and read additional information afterwards
-                                             */
-                                            PoSelectionRequest poSelectionRequest = new PoSelectionRequest(
-                                                    new PoSelector(SeCommonProtocols.PROTOCOL_ISO14443_4, null,
-                                                            new PoSelector.PoAidSelector(
-                                                                    new SeSelector.AidSelector.IsoAid(CalypsoClassicInfo.AID),
-                                                                    PoSelector.InvalidatedPo.REJECT),
-                                                            "AID: " + CalypsoClassicInfo.AID),
-                                                    ChannelState.KEEP_OPEN);
-
-                                            /*
-                                             * Prepare the reading order and keep the associated parser for later use once the
-                                             * selection has been made.
-                                             */
-                                            readEnvironmentParserIndex = poSelectionRequest.prepareReadRecordsCmd(
-                                                    CalypsoClassicInfo.SFI_EnvironmentAndHolder,
-                                                    ReadDataStructure.SINGLE_RECORD_DATA, CalypsoClassicInfo.RECORD_NUMBER_1,
-                                                    String.format("EnvironmentAndHolder (SFI=%02X))",
-                                                            CalypsoClassicInfo.SFI_EnvironmentAndHolder));
-
-                                            /*
-                                             * Add the selection case to the current selection (we could have added other cases
-                                             * here)
-                                             */
-                                            seSelection.prepareSelection(poSelectionRequest);
-
-                                            /*
-                                             * Provide the SeReader with the selection operation to be processed when a PO is
-                                             * inserted.
-                                             */
-                                            ((ObservableReader) seReader).setDefaultSelectionRequest(
-                                                    seSelection.getSelectionOperation(),
-                                                    ObservableReader.NotificationMode.MATCHED_ONLY);
-                                        }  catch (KeypleBaseException e) {
-                                            e.printStackTrace();
-                                        } catch (IllegalArgumentException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-
-                            @Override
-                            public void onError(int error) {
-                                // TODO Display error message
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-                });
+        // [1] Power on ASK reader
+        ConePeripheral.RFID_ASK_UCM108_GPIO.on(getContext());
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
-        ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(getContext(), false).subscribeOn(Schedulers.io())
-                .subscribe(new SingleObserver<CpcResult.RESULT>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onSuccess(CpcResult.RESULT result) {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-                });
+        // TODO close Reader and plugin properly before powering off
+        ConePeripheral.RFID_ASK_UCM108_GPIO.off(getContext());
 
         LOG.debug("Remove task as an observer for ReaderEvents");
         ((ObservableReader) seReader).removeObserver(this);
@@ -248,7 +172,7 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
     }
 
     /**
-     * Catch @{@link org.eclipse.keyple.plugin.android.cone2.AndroidCone2Reader} events When a SE is inserted, launch test commands
+     * Catch @{@link Cone2ContactLessReader} events When a SE is inserted, launch test commands
      **
      * @param event
      */
@@ -285,6 +209,71 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
         });
     }
 
+
+    private void createPlugin(AndroidCone2Factory pluginFactory) {
+        SeProxyService seProxyService = SeProxyService.getInstance();
+        seProxyService.registerPlugin(pluginFactory);
+
+        try {
+            // define task as an observer for ReaderEvents
+            LOG.debug("Define this view as an observer for ReaderEvents");
+            seReader = seProxyService.getPlugins().first().getReaders().first();
+            /* remove the observer if it already exist */
+            ((ObservableReader) seReader).addObserver(Cone2TestFragment.this);
+
+            /*
+             * Prepare a Calypso PO selection
+             */
+            seSelection = new SeSelection();
+
+            /*
+             * Setting of an AID based selection of a Calypso REV3 PO
+             *
+             * Select the first application matching the selection AID whatever the SE communication
+             * protocol keep the logical channel open after the selection
+             */
+
+            /*
+             * Calypso selection: configures a PoSelector with all the desired attributes to make
+             * the selection and read additional information afterwards
+             */
+            PoSelectionRequest poSelectionRequest = new PoSelectionRequest(
+                new PoSelector(SeCommonProtocols.PROTOCOL_ISO14443_4, null,
+                               new PoSelector.PoAidSelector(
+                                   new SeSelector.AidSelector.IsoAid(CalypsoClassicInfo.AID),
+                                   PoSelector.InvalidatedPo.REJECT),
+                               "AID: " + CalypsoClassicInfo.AID),
+                ChannelState.KEEP_OPEN);
+
+            /*
+             * Prepare the reading order and keep the associated parser for later use once the
+             * selection has been made.
+             */
+            readEnvironmentParserIndex = poSelectionRequest.prepareReadRecordsCmd(
+                CalypsoClassicInfo.SFI_EnvironmentAndHolder,
+                ReadDataStructure.SINGLE_RECORD_DATA, CalypsoClassicInfo.RECORD_NUMBER_1,
+                String.format("EnvironmentAndHolder (SFI=%02X))",
+                              CalypsoClassicInfo.SFI_EnvironmentAndHolder));
+
+            /*
+             * Add the selection case to the current selection (we could have added other cases
+             * here)
+             */
+            seSelection.prepareSelection(poSelectionRequest);
+
+            /*
+             * Provide the SeReader with the selection operation to be processed when a PO is
+             * inserted.
+             */
+            ((ObservableReader) seReader).setDefaultSelectionRequest(
+                seSelection.getSelectionOperation(),
+                ObservableReader.NotificationMode.MATCHED_ONLY);
+        }  catch (KeypleBaseException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Run Calypso simple read transaction
@@ -396,7 +385,7 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
 
 
     /**
-     * Revocation of the Activity from @{@link AndroidCone2Reader} list of observers
+     * Revocation of the Activity from @{@link Cone2ContactLessReader} list of observers
      */
     @Override
     public void onDestroy() {

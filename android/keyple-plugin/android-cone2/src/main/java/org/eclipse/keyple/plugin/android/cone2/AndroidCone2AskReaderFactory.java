@@ -8,7 +8,6 @@ import java.lang.ref.WeakReference;
 
 import fr.coppernic.sdk.ask.Defines;
 import fr.coppernic.sdk.ask.Reader;
-import fr.coppernic.sdk.utils.core.CpcDefinitions;
 import fr.coppernic.sdk.utils.io.InstanceListener;
 
 /**
@@ -16,7 +15,7 @@ import fr.coppernic.sdk.utils.io.InstanceListener;
  * The purpose of provideing only one instance is to share the uniqueAskReaderInstance between contactless and
  * contact interfaces.
  */
-class AndroidCone2AskReader {
+public class AndroidCone2AskReaderFactory {
     // The unique reader instance for whole API
     private static WeakReference<Reader> uniqueAskReaderInstance = new WeakReference<Reader>(null);
 
@@ -41,9 +40,9 @@ class AndroidCone2AskReader {
 
                     // Opens reader
                     int ret = reader.cscOpen(
-                            CpcDefinitions.ASK_READER_PORT,
-                            115200,
-                            false);
+                        fr.coppernic.sdk.core.Defines.SerialDefines.ASK_READER_PORT,
+                        115200,
+                        false);
 
                     if (ret != Defines.RCSC_Ok) {
                         listener.onError(ret);
@@ -54,12 +53,12 @@ class AndroidCone2AskReader {
                     ret = reader.cscVersionCsc(sb);
 
                     // Stores the instance
-                    AndroidCone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
+                    AndroidCone2AskReaderFactory.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
 
                     if (ret != Defines.RCSC_Ok) {
                         listener.onError(ret);
                     } else {
-                        listener.onInstanceAvailable(AndroidCone2AskReader
+                        listener.onInstanceAvailable(AndroidCone2AskReaderFactory
                                 .uniqueAskReaderInstance
                                 .get());
                     }

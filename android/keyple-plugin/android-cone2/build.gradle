@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 
 project.group 'org.eclipse.keyple'
-project.version = '0.7.0'+'-'+ timestamp+ '-SNAPSHOT'
+project.version = '0.8.0'+'-'+ timestamp+ '-SNAPSHOT'
 
 repositories {
     println "test"
