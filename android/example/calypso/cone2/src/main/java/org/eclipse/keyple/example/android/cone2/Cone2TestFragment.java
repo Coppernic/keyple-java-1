@@ -109,6 +109,14 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
             }
         });
 
+        view.findViewById(R.id.btnRemoveCard).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AndroidCone2Reader reader = (AndroidCone2Reader)seReader;
+                reader.notifyCardAbsent();
+            }
+        });
+
         initTextView();
 
         return view;

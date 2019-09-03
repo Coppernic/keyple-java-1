@@ -127,44 +127,44 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
 
     @Override
     protected boolean waitForCardAbsent(long timeout) {
-        // This method sends a neutral APDU, which will return RCSC_Timeout if no card is present in
-        // the field. In case a card is in the field, it will return RCSC_Ok with error status.
-        try {
-            // Thread synchronisation
-            isTransmitting.lock();
-            LOG.debug("not transmitting");
-            byte[] neutralApdu = {0x00, (byte) 0xA4, 0x00, 0x00, 0x00};
-            byte[] bufOut = new byte[256];
-            int[] lnOut = new int[1];
-            // Changes timing of timeouts, by default timeout is 5000ms. A 5000ms would generate a
-            // too long wait if the card is removed a the beginning of the call.
-            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-                    AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_KEY,
-                    AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT),
-                    3000,
-                    0);
-            // Sends the neutral APDU and wait for answer
-            int ret = reader.cscISOCommand(neutralApdu, neutralApdu.length, bufOut, lnOut);
-            // Changes back the timeout to previous value
-            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-                    AndroidCone2Parameters.FUNCTION_TIMEOUT_KEY,
-                    AndroidCone2Parameters.FUNCTION_TIMEOUT_DEFAULT),
-                    3000,
-                    0);
-            // A timeout has occurred, the card has been removed
-            if (ret == Defines.RCSC_Timeout) {
-                LOG.debug("Card removed");
-                isCardDiscovered.set(false);
-                //isTransmitting.unlock();
-                return true;
-            }
-        } finally {
-            isTransmitting.unlock();
-        }
+//        // This method sends a neutral APDU, which will return RCSC_Timeout if no card is present in
+//        // the field. In case a card is in the field, it will return RCSC_Ok with error status.
+//        try {
+//            // Thread synchronisation
+//            isTransmitting.lock();
+//            LOG.debug("not transmitting");
+//            byte[] neutralApdu = {0x00, (byte) 0xA4, 0x00, 0x00, 0x00};
+//            byte[] bufOut = new byte[256];
+//            int[] lnOut = new int[1];
+//            // Changes timing of timeouts, by default timeout is 5000ms. A 5000ms would generate a
+//            // too long wait if the card is removed a the beginning of the call.
+//            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
+//                    AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_KEY,
+//                    AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT),
+//                    3000,
+//                    0);
+//            // Sends the neutral APDU and wait for answer
+//            int ret = reader.cscISOCommand(neutralApdu, neutralApdu.length, bufOut, lnOut);
+//            // Changes back the timeout to previous value
+//            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
+//                    AndroidCone2Parameters.FUNCTION_TIMEOUT_KEY,
+//                    AndroidCone2Parameters.FUNCTION_TIMEOUT_DEFAULT),
+//                    3000,
+//                    0);
+//            // A timeout has occurred, the card has been removed
+//            if (ret == Defines.RCSC_Timeout) {
+//                LOG.debug("Card removed");
+//                isCardDiscovered.set(false);
+//                //isTransmitting.unlock();
+//                return true;
+//            }
+//        } finally {
+//            isTransmitting.unlock();
+//        }
 
         // Either the API is transmitting or the return value of cscISOCommand is not null, so the
         // card is present
-        return false;
+        return !isCardDiscovered.get();
     }
 
     /**
@@ -311,5 +311,11 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
                 }
             });
         }
+    }
+
+    private AtomicBoolean isCardAbsent = new AtomicBoolean(false);
+
+    public void notifyCardAbsent() {
+        isCardDiscovered.set(false);
     }
 }
