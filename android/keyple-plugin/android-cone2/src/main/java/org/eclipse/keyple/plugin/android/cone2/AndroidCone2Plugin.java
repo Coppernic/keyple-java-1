@@ -11,8 +11,6 @@
  ********************************************************************************/
 package org.eclipse.keyple.plugin.android.cone2;
 
-import android.content.Context;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -21,8 +19,6 @@ import org.eclipse.keyple.core.seproxy.plugin.AbstractObservableReader;
 import org.eclipse.keyple.core.seproxy.plugin.AbstractStaticPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import fr.coppernic.sdk.ask.Reader;
 
 
 /**

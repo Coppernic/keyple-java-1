@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -326,6 +327,9 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
                         appendColoredText(mText, "SUCCESS\n", Color.GREEN);
                         mText.append("AID: ");
                         appendHexBuffer(mText, ByteArrayUtil.fromHex(CalypsoClassicInfo.AID));
+
+                        appendColoredText(mText, "WAIT\n", Color.BLUE);
+                        //SystemClock.sleep(5000);
 
                         /*
                          * Retrieve the data read from the parser updated during the selection

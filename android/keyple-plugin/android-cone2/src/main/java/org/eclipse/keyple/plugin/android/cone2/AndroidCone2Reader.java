@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -127,44 +128,71 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
 
     @Override
     protected boolean waitForCardAbsent(long timeout) {
-//        // This method sends a neutral APDU, which will return RCSC_Timeout if no card is present in
-//        // the field. In case a card is in the field, it will return RCSC_Ok with error status.
-//        try {
-//            // Thread synchronisation
-//            isTransmitting.lock();
-//            LOG.debug("not transmitting");
-//            byte[] neutralApdu = {0x00, (byte) 0xA4, 0x00, 0x00, 0x00};
-//            byte[] bufOut = new byte[256];
-//            int[] lnOut = new int[1];
-//            // Changes timing of timeouts, by default timeout is 5000ms. A 5000ms would generate a
-//            // too long wait if the card is removed a the beginning of the call.
-//            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-//                    AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_KEY,
-//                    AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT),
-//                    3000,
-//                    0);
-//            // Sends the neutral APDU and wait for answer
-//            int ret = reader.cscISOCommand(neutralApdu, neutralApdu.length, bufOut, lnOut);
-//            // Changes back the timeout to previous value
-//            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-//                    AndroidCone2Parameters.FUNCTION_TIMEOUT_KEY,
-//                    AndroidCone2Parameters.FUNCTION_TIMEOUT_DEFAULT),
-//                    3000,
-//                    0);
-//            // A timeout has occurred, the card has been removed
-//            if (ret == Defines.RCSC_Timeout) {
-//                LOG.debug("Card removed");
-//                isCardDiscovered.set(false);
-//                //isTransmitting.unlock();
-//                return true;
-//            }
-//        } finally {
-//            isTransmitting.unlock();
-//        }
+        LOG.debug("Wait for card absent");
+        // This method sends a neutral APDU, which will return RCSC_Timeout if no card is present in
+        // the field. In case a card is in the field, it will return RCSC_Ok with error status.
+        try {
+            // Thread synchronisation
+            LOG.debug("waitForCardAbsent - Requesting lock");
+            isTransmitting.lock();
+            LOG.debug("waitForCardAbsent - Lock acquired");
+            byte[] neutralApdu = {0x00, (byte) 0xA4, 0x00, 0x00, 0x00};
+            byte[] bufOut = new byte[256];
+            int[] lnOut = new int[1];
+            // Changes timing of timeouts, by default timeout is 5000ms. A 5000ms would generate a
+            // too long wait if the card is removed a the beginning of the call.
+            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
+                    AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_KEY,
+                    AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT),
+                    250,
+                    0);
+            // 1 - Sets the enterphase parameters to no select application
+            reader.cscEnterHuntPhaseParameters((byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, new byte[]{}, (byte)0x00, (byte)0x00);
+            LOG.debug("Starts discovery");
+            sCARD_SearchExt search = new sCARD_SearchExt();
+            search.OTH = 0;
+            search.CONT = 0;
+            search.INNO = 1;
+            search.ISOA = 1;
+            search.ISOB = 1;
+            search.MIFARE = 1;
+            search.MONO = 0;
+            search.MV4k = 0;
+            search.MV5k = 0;
+            search.TICK = 0;
+            int mask = Defines.SEARCH_MASK_INNO | Defines.SEARCH_MASK_ISOA | Defines.SEARCH_MASK_ISOB |
+                    Defines.SEARCH_MASK_MIFARE | Defines.SEARCH_MASK_MONO | Defines.SEARCH_MASK_MV4K |
+                    Defines.SEARCH_MASK_MV5K | Defines.SEARCH_MASK_TICK | Defines.SEARCH_MASK_OTH;
+            byte[] com = new byte[1];
+            int[] lpcbAtr = new int[1];
+            byte[] atr = new byte[64];
+
+            int ret = reader.cscSearchCardExt(search, mask, (byte)0x01, (byte)0x33, com, lpcbAtr, atr);
+            LOG.debug("Discovery stopped - " + com[0]);
+
+            // Changes back the timeout to previous value
+            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
+                    AndroidCone2Parameters.FUNCTION_TIMEOUT_KEY,
+                    AndroidCone2Parameters.FUNCTION_TIMEOUT_DEFAULT),
+                    3000,
+                    0);
+            // A timeout has occurred, the card has been removed
+            if (ret == Defines.RCSC_Timeout || com[0] == (byte)0x6F || com[0] == (byte)0x00) {
+                LOG.debug("Card removed");
+                isCardDiscovered.set(false);
+                //isTransmitting.unlock();
+                return true;
+            }
+        } finally {
+            isTransmitting.unlock();
+            LOG.debug("waitForCardAbsent - Lock released");
+        }
+
+        return false;
 
         // Either the API is transmitting or the return value of cscISOCommand is not null, so the
         // card is present
-        return !isCardDiscovered.get();
+//        return !isCardDiscovered.get();
     }
 
     /**
@@ -235,7 +263,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
 
     @Override
     protected byte[] transmitApdu(byte[] apduIn) throws KeypleIOReaderException {
-        LOG.debug("transmitApdu");
+        LOG.debug("transmitApdu - " + isTransmitting.isLocked());
         byte[] apduAnswer;
 
         try {
@@ -244,6 +272,7 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
             int[] dataReceivedLength = new int[1];
 
             if (reader != null) {
+                LOG.debug("transmitApdu - sending APDU");
                 reader.cscISOCommand(apduIn, apduIn.length, dataReceived, dataReceivedLength);
             } else {
                 throw new KeypleIOReaderException("Reader has not been instantiated");
@@ -312,8 +341,6 @@ public final class AndroidCone2Reader extends AbstractThreadedLocalReader {
             });
         }
     }
-
-    private AtomicBoolean isCardAbsent = new AtomicBoolean(false);
 
     public void notifyCardAbsent() {
         isCardDiscovered.set(false);
