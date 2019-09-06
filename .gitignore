@@ -78,3 +78,6 @@ Thumbs.db
 
 # Folder config file
 Desktop.ini
+
+# .properties
+keyple-core.properties

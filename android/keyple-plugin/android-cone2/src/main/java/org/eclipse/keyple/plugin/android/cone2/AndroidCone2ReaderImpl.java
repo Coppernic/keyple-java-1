@@ -33,6 +33,7 @@ import fr.coppernic.sdk.ask.ReaderListener;
 import fr.coppernic.sdk.ask.RfidTag;
 import fr.coppernic.sdk.ask.SearchParameters;
 import fr.coppernic.sdk.ask.sCARD_SearchExt;
+import fr.coppernic.sdk.utils.core.CpcBytes;
 
 
 /**
@@ -40,7 +41,7 @@ import fr.coppernic.sdk.ask.sCARD_SearchExt;
  * Coppernic C-One 2 device
  *
  */
-final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implements Cone2ContactLessReader {
+public final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implements Cone2ContactLessReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(AndroidCone2ReaderImpl.class);
 
@@ -68,7 +69,7 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
     /**
      * Private constructor
      */
-    AndroidCone2ReaderImpl(Reader reader) {
+    AndroidCone2ReaderImpl() {
         super(PLUGIN_NAME, READER_NAME);
 
         // We set parameters to default values
@@ -83,22 +84,24 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_KEY,
                 AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT));
 
-        this.reader = reader;
+        this.reader = AndroidCone2AskReaderFactory.getInstance();
     }
 
     @Override
     protected boolean waitForCardPresent(long timeout) {
         LOG.debug("waitForCardPresent");
-        // Starts searchnig cards. The discovery is infinite and asynchronous, so we just start it
-        // and wait for a card to be placed in the field.
-        startPolling();
 
         long start = SystemClock.uptimeMillis();
         long end = SystemClock.uptimeMillis();
         while(end - start < timeout) {
-            if (isCardDiscovered.get()) {
+            RfidTag rfidTag = enterHuntPhase();
+
+            if (rfidTag.getCommunicationMode() != RfidTag.CommunicationMode.Unknown) {
+                isCardDiscovered.set(true);
+                this.rfidTag = rfidTag;
                 return true;
             }
+
             end = SystemClock.uptimeMillis();
         }
 
@@ -112,46 +115,12 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
         return false;
     }
 
+    boolean logCardAbsent = false;
+
     @Override
     protected boolean waitForCardAbsent(long timeout) {
-        // This method sends a neutral APDU, which will return RCSC_Timeout if no card is present in
-        // the field. In case a card is in the field, it will return RCSC_Ok with error status.
-        try {
-            // Thread synchronisation
-            isTransmitting.lock();
-            LOG.debug("not transmitting");
-            byte[] neutralApdu = {0x00, (byte) 0xA4, 0x00, 0x00, 0x00};
-            byte[] bufOut = new byte[256];
-            int[] lnOut = new int[1];
-            // Changes timing of timeouts, by default timeout is 5000ms. A 5000ms would generate a
-            // too long wait if the card is removed a the beginning of the call.
-            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-                    AndroidCone2Parameters.CHECK_FOR_ABSENCE_TIMEOUT_KEY,
-                    AndroidCone2Parameters.THREAD_WAIT_TIMEOUT_DEFAULT),
-                    3000,
-                    0);
-            // Sends the neutral APDU and wait for answer
-            int ret = reader.cscISOCommand(neutralApdu, neutralApdu.length, bufOut, lnOut);
-            // Changes back the timeout to previous value
-            reader.cscSetTimings(AndroidCone2Parameters.getIntParam(parameters,
-                    AndroidCone2Parameters.FUNCTION_TIMEOUT_KEY,
-                    AndroidCone2Parameters.FUNCTION_TIMEOUT_DEFAULT),
-                    3000,
-                    0);
-            // A timeout has occurred, the card has been removed
-            if (ret == Defines.RCSC_Timeout) {
-                LOG.debug("Card removed");
-                isCardDiscovered.set(false);
-                //isTransmitting.unlock();
-                return true;
-            }
-        } finally {
-            isTransmitting.unlock();
-        }
-
-        // Either the API is transmitting or the return value of cscISOCommand is not null, so the
-        // card is present
-        return false;
+        SystemClock.sleep(50);
+        return !isCardDiscovered.get();
     }
 
     /**
@@ -222,11 +191,11 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
 
     @Override
     protected byte[] transmitApdu(byte[] apduIn) throws KeypleIOReaderException {
-        LOG.debug("transmitApdu");
+        LOG.debug("transmitApdu: " + CpcBytes.byteArrayToString(apduIn));
         byte[] apduAnswer;
 
         try {
-            isTransmitting.lock();
+            acquireLock();
             byte[] dataReceived = new byte[256];
             int[] dataReceivedLength = new int[1];
 
@@ -248,7 +217,7 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
                 System.arraycopy(dataReceived, 1, apduAnswer, 0, apduAnswer.length);
             }
         } finally {
-            isTransmitting.unlock();
+            releaseLock();
         }
         LOG.debug("End transmission");
 
@@ -281,9 +250,10 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
         int mask = Defines.SEARCH_MASK_INNO | Defines.SEARCH_MASK_ISOA | Defines.SEARCH_MASK_ISOB |
                 Defines.SEARCH_MASK_MIFARE | Defines.SEARCH_MASK_MONO | Defines.SEARCH_MASK_MV4K |
                 Defines.SEARCH_MASK_MV5K | Defines.SEARCH_MASK_TICK | Defines.SEARCH_MASK_OTH;
-        SearchParameters parameters = new SearchParameters(search, mask, (byte) 0x01, (byte) 0x00);
+        SearchParameters parameters = new SearchParameters(search, mask, (byte) 0x00, (byte) 0xFF);
         // Starts card detection
         if (reader != null) {
+            LOG.debug("Starts discovery");
             reader.startDiscovery(parameters, new ReaderListener() {
                 @Override
                 public void onTagDiscovered(RfidTag rfidTag) {
@@ -298,5 +268,62 @@ final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader implement
                 }
             });
         }
+    }
+
+    public void simulateCardRemoved() {
+        logCardAbsent = false;
+        isCardDiscovered.set(false);
+    }
+
+    public void acquireLock() {
+        LOG.debug("Acquiring lock");
+        isTransmitting.lock();
+        LOG.debug("Lock acquired");
+    }
+
+    public void releaseLock() {
+        LOG.debug("Releasing lock");
+        isTransmitting.unlock();
+        LOG.debug("Lock released");
+    }
+
+    public RfidTag enterHuntPhase() {
+        // Thread synchronisation
+        acquireLock();
+        // 1 - Sets the enterphase parameters to no select application
+        reader.cscEnterHuntPhaseParameters((byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, new byte[]{}, (byte)0x00, (byte)0x00);
+        LOG.debug("Starts discovery");
+        sCARD_SearchExt search = new sCARD_SearchExt();
+        search.OTH = 0;
+        search.CONT = 0;
+        search.INNO = 1;
+        search.ISOA = 1;
+        search.ISOB = 1;
+        search.MIFARE = 1;
+        search.MONO = 0;
+        search.MV4k = 0;
+        search.MV5k = 0;
+        search.TICK = 0;
+        int mask = Defines.SEARCH_MASK_INNO | Defines.SEARCH_MASK_ISOA | Defines.SEARCH_MASK_ISOB |
+                Defines.SEARCH_MASK_MIFARE | Defines.SEARCH_MASK_MONO | Defines.SEARCH_MASK_MV4K |
+                Defines.SEARCH_MASK_MV5K | Defines.SEARCH_MASK_TICK | Defines.SEARCH_MASK_OTH;
+        byte[] com = new byte[1];
+        int[] lpcbAtr = new int[1];
+        byte[] atr = new byte[64];
+
+        int ret = reader.cscSearchCardExt(search, mask, (byte)0x00, (byte)0x33, com, lpcbAtr, atr);
+        LOG.debug("Discovery ended - " + com[0]);
+        RfidTag rfidTag;
+        if (ret == Defines.RCSC_Timeout || com[0] == (byte)0x6F || com[0] == (byte)0x00) {
+            isCardDiscovered.set(false);
+            //isTransmitting.unlock();
+            rfidTag = new RfidTag((byte) 0x6F, new byte[0]);
+        } else {
+            rfidTag = new RfidTag(com[0], atr);
+        }
+
+        releaseLock();
+
+        return rfidTag;
     }
 }

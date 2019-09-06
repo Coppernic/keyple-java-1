@@ -22,9 +22,6 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import fr.coppernic.sdk.ask.Reader;
-
-
 /**
  * Enables Keyple to communicate with the the Android device embedded NFC reader. In the Android
  * platform, NFC reader must be link to an application activity.
@@ -42,13 +39,10 @@ final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements Andro
     static final String PLUGIN_NAME = "AndroidCone2Plugin";
 
     private final Map<String, String> parameters = new HashMap<String, String>();// not in use in this
-
-    private final Reader reader;
     // plugin
 
-    AndroidCone2PluginImpl(Reader reader) {
+    AndroidCone2PluginImpl() {
         super(PLUGIN_NAME);
-        this.reader = reader;
     }
 
     @Override
@@ -74,7 +68,7 @@ final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements Andro
     protected SortedSet<SeReader> initNativeReaders() throws KeypleReaderException {
         LOG.debug("InitNativeReader() add the unique instance of AndroidCone2Reader");
         SortedSet<SeReader> readers = new TreeSet<SeReader>();
-        readers.add(new AndroidCone2ReaderImpl(reader));
+        readers.add(new AndroidCone2ReaderImpl());
         return readers;
     }
 

@@ -50,6 +50,7 @@ import org.eclipse.keyple.core.util.ByteArrayUtil;
 import org.eclipse.keyple.plugin.android.cone2.AndroidCone2AskReaderFactory;
 import org.eclipse.keyple.plugin.android.cone2.AndroidCone2AskReaderFactory.ReaderListener;
 import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Factory;
+import org.eclipse.keyple.plugin.android.cone2.AndroidCone2ReaderImpl;
 import org.eclipse.keyple.plugin.android.cone2.Cone2ContactLessReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +107,13 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
             public boolean onLongClick(View view) {
                 initTextView();
                 return true;
+            }
+        });
+
+        view.findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((AndroidCone2ReaderImpl)(seReader)).simulateCardRemoved();
             }
         });
 
