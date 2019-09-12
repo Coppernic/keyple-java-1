@@ -59,7 +59,8 @@ final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements Andro
 
 
     /**
-     * For an Android C-One² device, the Android C-One² Plugin manages only one @{@link AndroidCone2ReaderImpl}.
+     * For an Android C-One² device, the Android C-One² Plugin manages only one
+     * @{@link AndroidCone2ReaderImpl}.
      * 
      * @return SortedSet<ProxyReader> : contains only one element, the
      *         singleton @{@link AndroidCone2ReaderImpl}
@@ -69,11 +70,19 @@ final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements Andro
         LOG.debug("InitNativeReader() add the unique instance of AndroidCone2Reader");
         SortedSet<SeReader> readers = new TreeSet<SeReader>();
         readers.add(new AndroidCone2ReaderImpl());
+        AndroidCone2ContactReaderImpl sam1 = new AndroidCone2ContactReaderImpl();
+        sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID
+                , Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_1);
+        readers.add(sam1);
+        AndroidCone2ContactReaderImpl sam2 = new AndroidCone2ContactReaderImpl();
+        sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID,
+                Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_2);
+        readers.add(sam2);
         return readers;
     }
 
     /**
-     * Return the C-One²Reader whatever is the provided name
+     * Return the C-One² Reader whatever is the provided name
      * 
      * @param name : name of the reader to retrieve
      * @return instance of @{@link AndroidCone2ReaderImpl}

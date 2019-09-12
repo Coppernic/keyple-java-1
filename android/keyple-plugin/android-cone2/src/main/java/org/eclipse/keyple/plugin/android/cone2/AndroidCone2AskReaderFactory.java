@@ -88,6 +88,6 @@ public class AndroidCone2AskReaderFactory {
 
     public static void clearInstance () {
         uniqueAskReaderInstance.get().cscClose();
-        uniqueAskReaderInstance = null;
+        uniqueAskReaderInstance = new WeakReference<Reader>(null);
     }
 }

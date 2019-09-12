@@ -319,7 +319,9 @@ public final class AndroidCone2ReaderImpl extends AbstractThreadedLocalReader im
             //isTransmitting.unlock();
             rfidTag = new RfidTag((byte) 0x6F, new byte[0]);
         } else {
-            rfidTag = new RfidTag(com[0], atr);
+            byte[] correctSizedAtr = new byte[lpcbAtr[0]];
+            System.arraycopy(atr, 0, correctSizedAtr, 0, correctSizedAtr.length);
+            rfidTag = new RfidTag(com[0], correctSizedAtr);
         }
 
         releaseLock();

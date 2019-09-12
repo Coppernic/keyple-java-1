@@ -23,6 +23,6 @@ public class AndroidCone2Factory extends AbstractPluginFactory {
 
     @Override
     protected ReaderPlugin getPluginInstance() {
-        return new AndroidCone2PluginImpl(reader);
+        return new AndroidCone2PluginImpl();
     }
 }
