@@ -1,10 +1,10 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import fr.coppernic.sdk.ask.Defines;
 import fr.coppernic.sdk.ask.Reader;
@@ -12,12 +12,19 @@ import fr.coppernic.sdk.utils.io.InstanceListener;
 
 /**
  * This class provides the one and only Reader instance.
- * The purpose of provideing only one instance is to share the uniqueAskReaderInstance between contactless and
- * contact interfaces.
+ * The purpose of providing only one instance is to share the uniqueAskReaderInstance between
+ * contactless and contact interfaces.
  */
-public class AndroidCone2AskReaderFactory {
+public class Cone2AskReader {
     // The unique reader instance for whole API
     private static WeakReference<Reader> uniqueAskReaderInstance = new WeakReference<Reader>(null);
+
+    // This variable assures that we are not checking for card when it is transmitting.
+    // The reason is that the ASK reader is working synchronously and the reader logic is
+    // asynchronous. If a command has been sent to the reader using transmitApdu, and then before
+    // the answer a checkSePresence call is made, the reader will fall in timeout causing the API to
+    // interpret this as a card removed event.
+    private static ReentrantLock isTransmitting = new ReentrantLock();
 
     // Interface needed because the instantiation of the Reader instance is asynchronous.
     public interface ReaderListener {
@@ -26,11 +33,11 @@ public class AndroidCone2AskReaderFactory {
     }
 
     /**
-     * Provides the one and only instance of ASK reader
+     * Provides the one and only instance of ASK reader, this must be called before any call to
+     * getInstance()
      * @param context A context
      * @param listener ReaderListener, needed because the instantiation is asynchronous
      */
-    @NonNull
     public static void getInstance(Context context, final ReaderListener listener) {
         // If uniqueAskReaderInstance is null, instantiates it
         if (uniqueAskReaderInstance.get() == null) {
@@ -53,12 +60,12 @@ public class AndroidCone2AskReaderFactory {
                     ret = reader.cscVersionCsc(sb);
 
                     // Stores the instance
-                    AndroidCone2AskReaderFactory.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
+                    Cone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
 
                     if (ret != Defines.RCSC_Ok) {
                         listener.onError(ret);
                     } else {
-                        listener.onInstanceAvailable(AndroidCone2AskReaderFactory
+                        listener.onInstanceAvailable(Cone2AskReader
                                 .uniqueAskReaderInstance
                                 .get());
                     }
@@ -78,7 +85,7 @@ public class AndroidCone2AskReaderFactory {
 
     /**
      * Returns the unique instance of ASK reader. This should not be called as long as
-     * getInstance(Context context, final ReaderListener listener) has nor successfully executed.
+     * getInstance(Context context, final ReaderListener listener) has not successfully executed.
      * @return Unique Reader instance
      */
     @Nullable
@@ -86,8 +93,27 @@ public class AndroidCone2AskReaderFactory {
         return uniqueAskReaderInstance.get();
     }
 
+    /**
+     * Resets the instance, this is needed when the reader is powered off for instance.
+     */
     public static void clearInstance () {
-        uniqueAskReaderInstance.get().cscClose();
-        uniqueAskReaderInstance = new WeakReference<Reader>(null);
+        if (uniqueAskReaderInstance.get() != null) {
+            uniqueAskReaderInstance.get().cscClose();
+            uniqueAskReaderInstance = new WeakReference<Reader>(null);
+        }
+    }
+
+    /**
+     * Acquires the lock to synchronize the communication with the reader
+     */
+    public static void acquireLock() {
+        isTransmitting.lock();
+    }
+
+    /**
+     * Releases the lock
+     */
+    public static void releaseLock() {
+        isTransmitting.unlock();
     }
 }

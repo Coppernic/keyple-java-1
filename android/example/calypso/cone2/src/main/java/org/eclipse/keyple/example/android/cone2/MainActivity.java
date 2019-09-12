@@ -12,7 +12,7 @@
 package org.eclipse.keyple.example.android.cone2;
 
 import org.eclipse.keyple.core.seproxy.SeProxyService;
-import org.eclipse.keyple.plugin.android.cone2.AndroidCone2Plugin;
+import org.eclipse.keyple.plugin.android.cone2.Cone2Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import android.os.Bundle;
@@ -30,7 +30,7 @@ import android.view.WindowManager;
 
 
 /**
- * Example of @{@link SeProxyService} implementation based on the @{@link AndroidCone2Plugin}
+ * Example of @{@link SeProxyService} implementation based on the @{@link Cone2Plugin}
  *
  */
 public class MainActivity extends AppCompatActivity {

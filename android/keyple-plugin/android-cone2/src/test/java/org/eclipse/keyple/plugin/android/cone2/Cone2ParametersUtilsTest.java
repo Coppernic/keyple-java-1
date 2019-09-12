@@ -9,7 +9,7 @@ import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class AndroidCone2ParametersTest {
+public class Cone2ParametersUtilsTest {
 
     private HashMap<String, String> parameters = new HashMap<String, String>();
 
@@ -35,21 +35,21 @@ public class AndroidCone2ParametersTest {
     public void getIntParamTest() {
         // 1 - Tests regular case: parameter stored value is an integer different from default value
         // Expected result is stored value as an integer
-        assertThat(AndroidCone2Parameters.getIntParam(parameters,
+        assertThat(Cone2ParametersUtils.getIntParam(parameters,
                 PARAM_1_KEY,
                 Integer.toString(PARAM_1_DEFAULT_VALUE)),
                 is(PARAM_1_VALUE));
 
         // 2 - Tests error case when value stored is not an integer
         try {
-            AndroidCone2Parameters.getIntParam(parameters, PARAM_2_KEY, PARAM_2_VALUE);
+            Cone2ParametersUtils.getIntParam(parameters, PARAM_2_KEY, PARAM_2_VALUE);
             fail();
         } catch (NumberFormatException nfe) {
             // Test succeeded
         }
 
         // 3 - Tests error when stored value is non integer and default value is
-        assertThat(AndroidCone2Parameters.getIntParam(parameters,
+        assertThat(Cone2ParametersUtils.getIntParam(parameters,
                 PARAM_3_KEY,
                 Integer.toString(PARAM_3_DEFAULT_VALUE)),
                 is(PARAM_3_DEFAULT_VALUE));

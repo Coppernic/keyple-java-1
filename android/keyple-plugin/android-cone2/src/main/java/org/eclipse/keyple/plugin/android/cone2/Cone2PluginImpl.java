@@ -23,25 +23,16 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- * Enables Keyple to communicate with the the Android device embedded NFC reader. In the Android
- * platform, NFC reader must be link to an application activity.
- *
- *
- *
- *
- *
+ * Enables Keyple to communicate with the the C-One² ASK RFID reader.
  */
 
-final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements AndroidCone2Plugin {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AndroidCone2PluginImpl.class);
-
-    static final String PLUGIN_NAME = "AndroidCone2Plugin";
+final class Cone2PluginImpl extends AbstractStaticPlugin implements Cone2Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(Cone2PluginImpl.class);
 
     private final Map<String, String> parameters = new HashMap<String, String>();// not in use in this
     // plugin
 
-    AndroidCone2PluginImpl() {
+    Cone2PluginImpl() {
         super(PLUGIN_NAME);
     }
 
@@ -60,35 +51,42 @@ final class AndroidCone2PluginImpl extends AbstractStaticPlugin implements Andro
 
     /**
      * For an Android C-One² device, the Android C-One² Plugin manages only one
-     * @{@link AndroidCone2ReaderImpl}.
+     * {@link Cone2ContactlessReaderImpl} and 2 {@link Cone2ContactReaderImpl} .
      * 
      * @return SortedSet<ProxyReader> : contains only one element, the
-     *         singleton @{@link AndroidCone2ReaderImpl}
+     *         singleton {@link Cone2ContactlessReaderImpl}
      */
     @Override
-    protected SortedSet<SeReader> initNativeReaders() throws KeypleReaderException {
+    protected SortedSet<SeReader> initNativeReaders() {
         LOG.debug("InitNativeReader() add the unique instance of AndroidCone2Reader");
         SortedSet<SeReader> readers = new TreeSet<SeReader>();
-        readers.add(new AndroidCone2ReaderImpl());
-        AndroidCone2ContactReaderImpl sam1 = new AndroidCone2ContactReaderImpl();
+        readers.add(new Cone2ContactlessReaderImpl());
+        Cone2ContactReaderImpl sam1 = new Cone2ContactReaderImpl();
         sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID
                 , Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_1);
         readers.add(sam1);
-        AndroidCone2ContactReaderImpl sam2 = new AndroidCone2ContactReaderImpl();
-        sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID,
+        Cone2ContactReaderImpl sam2 = new Cone2ContactReaderImpl();
+        sam2.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID,
                 Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_2);
         readers.add(sam2);
         return readers;
     }
 
     /**
-     * Return the C-One² Reader whatever is the provided name
+     * Returns the C-One² Reader whatever is the provided name
      * 
      * @param name : name of the reader to retrieve
-     * @return instance of @{@link AndroidCone2ReaderImpl}
+     * @return instance of @{@link Cone2ContactlessReaderImpl}
      */
     @Override
     protected SeReader fetchNativeReader(String name) throws KeypleReaderException {
-        return readers.first();
+        // return the current reader if it is already listed
+        for (SeReader reader : readers) {
+            if (reader.getName().equals(name)) {
+                return reader;
+            }
+        }
+
+        throw new KeypleReaderException("Reader " + name + " not found!");
     }
 }
