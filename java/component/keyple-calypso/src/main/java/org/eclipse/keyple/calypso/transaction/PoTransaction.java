@@ -77,7 +77,7 @@ public final class PoTransaction {
     /** The reader for session SAM. */
     private ProxyReader samReader;
     /** The SAM default revision. */
-    private final SamRevision samRevision = SamRevision.S1D;
+    private final SamRevision samRevision = SamRevision.C1;
     /** The security settings. */
     private SecuritySettings securitySettings;
     /** The PO serial number extracted from FCI */

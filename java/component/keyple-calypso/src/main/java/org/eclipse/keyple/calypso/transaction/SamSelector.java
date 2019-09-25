@@ -49,14 +49,10 @@ public class SamSelector extends SeSelector {
          */
         switch (samRevision) {
             case C1:
-
+            case S1D:
             case S1E:
                 atrRegex = "3B(.{6}|.{10})805A..80" + samRevision.getApplicationTypeMask()
                         + "20.{4}" + snRegex + "829000";
-                break;
-            case S1D:
-                atrRegex = "3B(.{6}|.{10})805A..80" + samRevision.getApplicationTypeMask()
-                        + "0.{4}" + snRegex + "82900000";
                 break;
             case AUTO:
                 /* match any ATR */
