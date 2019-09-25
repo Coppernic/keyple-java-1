@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import fr.coppernic.sdk.ask.Defines;
+import fr.coppernic.sdk.ask.EmvStatus;
 import fr.coppernic.sdk.ask.Reader;
 import fr.coppernic.sdk.ask.RfidTag;
 import fr.coppernic.sdk.ask.sCARD_SearchExt;
@@ -96,7 +97,24 @@ public final class Cone2ContactlessReaderImpl extends AbstractThreadedLocalReade
 
     @Override
     protected boolean waitForCardAbsent(long timeout) {
-        SystemClock.sleep(50);
+        SystemClock.sleep(1000);
+        try {
+            Cone2AskReader.acquireLock();
+
+            EmvStatus emvStatus = new EmvStatus();
+            int ret = reader.cscSendEmvCommand((byte)0x03, new byte[]{0x10}, emvStatus);
+            if (ret != Defines.RCSC_Ok) {
+                // TODO throw exception here
+            }
+
+            if(emvStatus.getStatus() == EmvStatus.Status.No_Picc_Found) {
+                isCardDiscovered.set(false);
+            }
+
+        } finally {
+            Cone2AskReader.releaseLock();
+        }
+
         return !isCardDiscovered.get();
     }
 

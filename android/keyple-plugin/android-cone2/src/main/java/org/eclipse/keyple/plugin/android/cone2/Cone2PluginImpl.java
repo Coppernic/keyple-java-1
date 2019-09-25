@@ -31,6 +31,7 @@ import fr.coppernic.sdk.power.impl.cone.ConePeripheral;
 import fr.coppernic.sdk.utils.core.CpcResult;
 import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Enables Keyple to communicate with the the C-One² ASK RFID reader.
@@ -95,7 +96,7 @@ final class Cone2PluginImpl extends AbstractStaticPlugin implements Cone2Plugin 
      */
     @Override
     protected SeReader fetchNativeReader(String name) throws KeypleReaderException {
-        // return the current reader if it is already listed
+        // Returns the current reader if it is already listed
         for (SeReader reader : readers) {
             if (reader.getName().equals(name)) {
                 return reader;
@@ -107,7 +108,10 @@ final class Cone2PluginImpl extends AbstractStaticPlugin implements Cone2Plugin 
 
     @Override
     public void power(final Context context, final boolean on) {
-        ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(context, on).subscribe(new SingleObserver<CpcResult.RESULT>() {
+        ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(context, on)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(new SingleObserver<CpcResult.RESULT>() {
             @Override
             public void onSubscribe(Disposable d) {
 

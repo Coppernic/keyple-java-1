@@ -4,6 +4,8 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import fr.coppernic.sdk.ask.Defines;
@@ -18,6 +20,8 @@ import fr.coppernic.sdk.utils.io.InstanceListener;
 public class Cone2AskReader {
     // The unique reader instance for whole API
     private static WeakReference<Reader> uniqueAskReaderInstance = new WeakReference<Reader>(null);
+
+    private static ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
     // This variable assures that we are not checking for card when it is transmitting.
     // The reason is that the ASK reader is working synchronously and the reader logic is
@@ -43,7 +47,7 @@ public class Cone2AskReader {
         if (uniqueAskReaderInstance.get() == null) {
             Reader.getInstance(context, new InstanceListener<Reader>() {
                 @Override
-                public void onCreated(Reader reader) {
+                public void onCreated(final Reader reader) {
 
                     // Opens reader
                     int ret = reader.cscOpen(
@@ -55,20 +59,25 @@ public class Cone2AskReader {
                         listener.onError(ret);
                     }
 
-                    // Initializes reader
-                    StringBuilder sb = new StringBuilder();
-                    ret = reader.cscVersionCsc(sb);
+                    threadPool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Initializes reader
+                            StringBuilder sb = new StringBuilder();
+                            int ret = reader.cscVersionCsc(sb);
 
-                    // Stores the instance
-                    Cone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
+                            // Stores the instance
+                            Cone2AskReader.uniqueAskReaderInstance = new WeakReference<Reader>(reader);
 
-                    if (ret != Defines.RCSC_Ok) {
-                        listener.onError(ret);
-                    } else {
-                        listener.onInstanceAvailable(Cone2AskReader
-                                .uniqueAskReaderInstance
-                                .get());
-                    }
+                            if (ret != Defines.RCSC_Ok) {
+                                listener.onError(ret);
+                            } else {
+                                listener.onInstanceAvailable(Cone2AskReader
+                                        .uniqueAskReaderInstance
+                                        .get());
+                            }
+                        }
+                    });
                 }
 
                 @Override

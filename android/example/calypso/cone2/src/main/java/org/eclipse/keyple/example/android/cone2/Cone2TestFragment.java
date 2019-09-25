@@ -598,12 +598,17 @@ public class Cone2TestFragment extends Fragment {
      * @param text string
      * @param color color value
      */
-    private static void appendColoredText(TextView tv, String text, int color) {
-        int start = tv.getText().length();
-        tv.append(text);
-        int end = tv.getText().length();
+    private void appendColoredText(final TextView tv, final String text, final int color) {
+        this.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                int start = tv.getText().length();
+                tv.append(text);
+                int end = tv.getText().length();
 
-        Spannable spannableText = (Spannable) tv.getText();
-        spannableText.setSpan(new ForegroundColorSpan(color), start, end, 0);
+                Spannable spannableText = (Spannable) tv.getText();
+                spannableText.setSpan(new ForegroundColorSpan(color), start, end, 0);
+            }
+        });
     }
 }
