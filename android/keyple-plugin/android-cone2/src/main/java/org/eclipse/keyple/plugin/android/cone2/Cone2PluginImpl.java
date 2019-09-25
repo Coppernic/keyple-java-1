@@ -95,7 +95,7 @@ final class Cone2PluginImpl extends AbstractStaticPlugin implements Cone2Plugin 
      */
     @Override
     protected SeReader fetchNativeReader(String name) throws KeypleReaderException {
-        // return the current reader if it is already listed
+        // Returns the current reader if it is already listed
         for (SeReader reader : readers) {
             if (reader.getName().equals(name)) {
                 return reader;

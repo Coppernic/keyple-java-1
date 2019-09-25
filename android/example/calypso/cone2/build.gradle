@@ -140,10 +140,10 @@ dependencies {
     /*
     Keyple dependencies
      */
-    implementation project(path:':java:component:keyple-calypso')
-    implementation project(path:':java:component:keyple-core')
-    implementation project(path:':keyple-plugin:android-cone2')
-//    implementation (name:'keyple-plugin-android-cone2-0.7.0-20190903-SNAPSHOT', ext:'aar')
+//    implementation project(path:':java:component:keyple-calypso')
+//    implementation project(path:':java:component:keyple-core')
+//    implementation project(path:':keyple-plugin:android-cone2')
+    implementation (name:'keyple-plugin-android-cone2-0.8.0-20190925-SNAPSHOT', ext:'aar')
 
     
     /*
@@ -154,8 +154,8 @@ dependencies {
     implementation "com.android.support:design:${android_support_version}"
     implementation "com.android.support.constraint:constraint-layout:${android_support_constraint_version}"
 
-    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.5.6-keyple'
-    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.14'
+    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.5.7-keyple'
+    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.16'
     implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.18.4'
 
     /*
