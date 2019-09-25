@@ -211,41 +211,43 @@ public final class Cone2ContactlessReaderImpl extends AbstractThreadedLocalReade
 
     public RfidTag enterHuntPhase() {
         // Thread synchronisation
-        Cone2AskReader.acquireLock();
-        // 1 - Sets the enter hunt phase parameters to no select application
-        reader.cscEnterHuntPhaseParameters((byte)0x01, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, new byte[]{}, (byte)0x00, (byte)0x00);
-        sCARD_SearchExt search = new sCARD_SearchExt();
-        search.OTH = 0;
-        search.CONT = 0;
-        search.INNO = 1;
-        search.ISOA = 1;
-        search.ISOB = 1;
-        search.MIFARE = 0;
-        search.MONO = 0;
-        search.MV4k = 0;
-        search.MV5k = 0;
-        search.TICK = 0;
-        int mask = Defines.SEARCH_MASK_INNO | Defines.SEARCH_MASK_ISOA | Defines.SEARCH_MASK_ISOB;
+        try {
+            Cone2AskReader.acquireLock();
+            // 1 - Sets the enter hunt phase parameters to no select application
+            reader.cscEnterHuntPhaseParameters((byte) 0x01, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x00, new byte[]{}, (byte) 0x00, (byte) 0x00);
+            sCARD_SearchExt search = new sCARD_SearchExt();
+            search.OTH = 0;
+            search.CONT = 0;
+            search.INNO = 1;
+            search.ISOA = 1;
+            search.ISOB = 1;
+            search.MIFARE = 0;
+            search.MONO = 0;
+            search.MV4k = 0;
+            search.MV5k = 0;
+            search.TICK = 0;
+            int mask = Defines.SEARCH_MASK_INNO | Defines.SEARCH_MASK_ISOA | Defines.SEARCH_MASK_ISOB;
 
-        byte[] com = new byte[1];
-        int[] lpcbAtr = new int[1];
-        byte[] atr = new byte[64];
+            byte[] com = new byte[1];
+            int[] lpcbAtr = new int[1];
+            byte[] atr = new byte[64];
 
-        int ret = reader.cscSearchCardExt(search, mask, (byte)0x00, (byte)0x33, com, lpcbAtr, atr);
+            int ret = reader.cscSearchCardExt(search, mask, (byte) 0x00, (byte) 0x33, com, lpcbAtr, atr);
 
-        RfidTag rfidTag;
-        if (ret == Defines.RCSC_Timeout || com[0] == (byte)0x6F || com[0] == (byte)0x00) {
-            isCardDiscovered.set(false);
-            //isTransmitting.unlock();
-            rfidTag = new RfidTag((byte) 0x6F, new byte[0]);
-        } else {
-            byte[] correctSizedAtr = new byte[lpcbAtr[0]];
-            System.arraycopy(atr, 0, correctSizedAtr, 0, correctSizedAtr.length);
-            rfidTag = new RfidTag(com[0], correctSizedAtr);
+            RfidTag rfidTag;
+            if (ret == Defines.RCSC_Timeout || com[0] == (byte) 0x6F || com[0] == (byte) 0x00) {
+                isCardDiscovered.set(false);
+                //isTransmitting.unlock();
+                rfidTag = new RfidTag((byte) 0x6F, new byte[0]);
+            } else {
+                byte[] correctSizedAtr = new byte[lpcbAtr[0]];
+                System.arraycopy(atr, 0, correctSizedAtr, 0, correctSizedAtr.length);
+                rfidTag = new RfidTag(com[0], correctSizedAtr);
+            }
+
+            return rfidTag;
+        } finally {
+            Cone2AskReader.releaseLock();
         }
-
-        Cone2AskReader.releaseLock();
-
-        return rfidTag;
     }
 }

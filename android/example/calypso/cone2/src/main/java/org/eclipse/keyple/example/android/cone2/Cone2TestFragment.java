@@ -27,8 +27,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import static org.eclipse.keyple.calypso.command.sam.SamRevision.AUTO;
 import static org.eclipse.keyple.calypso.command.sam.SamRevision.S1D;
+import static org.eclipse.keyple.core.seproxy.event.ReaderEvent.EventType.*;
+
 import org.eclipse.keyple.calypso.command.po.parser.ReadDataStructure;
 import org.eclipse.keyple.calypso.command.po.parser.ReadRecordsRespPars;
 import org.eclipse.keyple.calypso.transaction.CalypsoPo;
@@ -49,34 +50,29 @@ import org.eclipse.keyple.core.seproxy.SeProxyService;
 import org.eclipse.keyple.core.seproxy.SeReader;
 import org.eclipse.keyple.core.seproxy.SeSelector;
 import org.eclipse.keyple.core.seproxy.event.AbstractDefaultSelectionsResponse;
+import org.eclipse.keyple.core.seproxy.event.ObservablePlugin;
 import org.eclipse.keyple.core.seproxy.event.ObservableReader;
+import org.eclipse.keyple.core.seproxy.event.PluginEvent;
 import org.eclipse.keyple.core.seproxy.event.ReaderEvent;
-import org.eclipse.keyple.core.seproxy.exception.KeypleBaseException;
+import org.eclipse.keyple.core.seproxy.event.ReaderEvent.EventType;
 import org.eclipse.keyple.core.seproxy.exception.KeypleReaderException;
 import org.eclipse.keyple.core.seproxy.exception.NoStackTraceThrowable;
 import org.eclipse.keyple.core.seproxy.protocol.SeCommonProtocols;
 import org.eclipse.keyple.core.util.ByteArrayUtil;
 import org.eclipse.keyple.plugin.android.cone2.Cone2AskReader;
-import org.eclipse.keyple.plugin.android.cone2.Cone2AskReader.ReaderListener;
 import org.eclipse.keyple.plugin.android.cone2.Cone2ContactlessReaderImpl;
 import org.eclipse.keyple.plugin.android.cone2.Cone2Factory;
 import org.eclipse.keyple.plugin.android.cone2.Cone2ContactlessReader;
+import org.eclipse.keyple.plugin.android.cone2.Cone2Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import fr.coppernic.sdk.ask.Reader;
-import fr.coppernic.sdk.power.PowerManager;
-import fr.coppernic.sdk.power.api.PowerListener;
-import fr.coppernic.sdk.power.api.peripheral.Peripheral;
-import fr.coppernic.sdk.power.impl.cone.ConePeripheral;
-import fr.coppernic.sdk.utils.core.CpcResult;
 
 
 /**
  * Test the Keyple NFC Plugin Configure the NFC seReader Configure the Observability Run test commands
  * when appropriate tag is detected.
  */
-public class Cone2TestFragment extends Fragment implements ObservableReader.ReaderObserver {
+public class Cone2TestFragment extends Fragment {
 
     private static final Logger LOG = LoggerFactory.getLogger(Cone2TestFragment.class);
 
@@ -92,11 +88,74 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
     private SamResource samResource;
     private SeSelection seSelection;
     private int readEnvironmentParserIndex;
+    private ObservablePlugin plugin;
 
 
     public static Cone2TestFragment newInstance() {
         return new Cone2TestFragment();
     }
+
+    private ObservableReader.ReaderObserver readerObserver = new ObservableReader.ReaderObserver() {
+        @Override
+        public void update(final ReaderEvent readerEvent) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    LOG.info("New ReaderEvent received : " + readerEvent.toString());
+
+                    switch (readerEvent.getEventType()) {
+                        case SE_MATCHED:
+                            runCalyspoTransaction(readerEvent.getDefaultSelectionsResponse());
+                            break;
+
+                        case SE_INSERTED:
+
+                            mText.append("\n ---- \n");
+                            mText.setText("Card inserted");
+                            runCalyspoTransaction(readerEvent.getDefaultSelectionsResponse());
+                            break;
+
+                        case SE_REMOVAL:
+                            initTextView();
+                            break;
+
+                        case IO_ERROR:
+                            mText.append("\n ---- \n");
+                            mText.setText("Error reading card");
+                            break;
+
+                    }
+                }
+            });
+        }
+    };
+
+    private ObservablePlugin.PluginObserver pluginObserver = new ObservablePlugin.PluginObserver() {
+        @Override
+        public void update(PluginEvent pluginEvent) {
+            switch(pluginEvent.getEventType()) {
+
+                case READER_CONNECTED:
+                    appendColoredText(mText,
+                            "Readers have been connected",
+                            Color.BLUE);
+                    try {
+                        initReaders();
+                    } catch (IllegalStateException ise) {
+//                        appendColoredText(mText,
+//                                ise.getMessage(),
+//                                Color.RED);
+                    }
+                    break;
+                case READER_DISCONNECTED:
+                    appendColoredText(mText,
+                            "Readers have been disconnected",
+                            Color.BLUE);
+                    break;
+            }
+        }
+    };
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -130,63 +189,39 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
 
         initTextView();
 
+        // [3] We can create a plugin factory
+        Cone2Factory pluginFactory = new Cone2Factory();
+
+        // [4] And then start keyple
+        try {
+            createPlugin(pluginFactory);
+        } catch (NoStackTraceThrowable noStackTraceThrowable) {
+            noStackTraceThrowable.printStackTrace();
+        } catch (KeypleReaderException e) {
+            e.printStackTrace();
+        }
+
         return view;
     }
-
-    private final PowerListener powerListener = new PowerListener() {
-        @Override
-        public void onPowerUp(CpcResult.RESULT res, Peripheral peripheral) {
-            // [2] Get an instance of Reader class
-            Cone2AskReader.getInstance(getActivity(),readerListener);
-        }
-
-        @Override
-        public void onPowerDown(CpcResult.RESULT res, Peripheral peripheral) {
-
-        }
-    };
-
-    private final ReaderListener readerListener = new ReaderListener() {
-        @Override
-        public void onInstanceAvailable(Reader reader) {
-            // [3] We can create a plugin factory
-            Cone2Factory pluginFactory = new Cone2Factory();
-
-            // [4] And then start keyple
-            try {
-                createPlugin(pluginFactory);
-            } catch (NoStackTraceThrowable noStackTraceThrowable) {
-                noStackTraceThrowable.printStackTrace();
-            } catch (KeypleReaderException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onError(int i) {
-
-        }
-    };
 
     @Override
     public void onStart() {
         super.onStart();
 
-        PowerManager.get().registerListener(powerListener);
+        plugin.addObserver(Cone2TestFragment.this.pluginObserver);
 
-        // [1] Power on ASK reader
-        ConePeripheral.RFID_ASK_UCM108_GPIO.on(getContext());
+        ((Cone2Plugin)plugin).power(getContext(), true);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
-        // TODO close Reader and plugin properly before powering off
-        ConePeripheral.RFID_ASK_UCM108_GPIO.off(getContext());
+        ((Cone2Plugin)plugin).power(getContext(), false);
+        plugin.removeObserver(pluginObserver);
 
         LOG.debug("Remove task as an observer for ReaderEvents");
-        ((ObservableReader) seReader).removeObserver(this);
+        ((ObservableReader) seReader).removeObserver(readerObserver);
 
         // destroy AndroidNFC fragment
         FragmentManager fm = getFragmentManager();
@@ -196,57 +231,23 @@ public class Cone2TestFragment extends Fragment implements ObservableReader.Read
         }
     }
 
-    /**
-     * Catch @{@link Cone2ContactlessReader} events When a SE is inserted, launch test commands
-     **
-     * @param event
-     */
-    @Override
-    public void update(final ReaderEvent event) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-
-                LOG.info("New ReaderEvent received : " + event.toString());
-
-                switch (event.getEventType()) {
-                    case SE_MATCHED:
-                        runCalyspoTransaction(event.getDefaultSelectionsResponse());
-                        break;
-
-                    case SE_INSERTED:
-
-                        mText.append("\n ---- \n");
-                        mText.setText("Card inserted");
-                        runCalyspoTransaction(event.getDefaultSelectionsResponse());
-                        break;
-
-                    case SE_REMOVAL:
-                        initTextView();
-                        break;
-
-                    case IO_ERROR:
-                        mText.append("\n ---- \n");
-                        mText.setText("Error reading card");
-                        break;
-
-                }
-            }
-        });
-    }
-
+    private SeProxyService seProxyService;
 
     private void createPlugin(Cone2Factory pluginFactory) throws NoStackTraceThrowable, KeypleReaderException {
-        SeProxyService seProxyService = SeProxyService.getInstance();
+        seProxyService = SeProxyService.getInstance();
         seProxyService.registerPlugin(pluginFactory);
 
         /*
          * Get a PO reader ready to work with Calypso PO. Use the getReader helper method from the
          * CalypsoUtilities class.
          */
+        plugin = (ObservablePlugin)seProxyService.getPlugins().first();
+    }
+
+    private void initReaders() throws IllegalStateException {
         try {
-            seReader = seProxyService.getPlugins().first().getReaders().last();
-            ((ObservableReader) seReader).addObserver(Cone2TestFragment.this);
+            seReader = plugin.getReaders().last();
+            ((ObservableReader) seReader).addObserver(Cone2TestFragment.this.readerObserver);
         } catch (KeypleReaderException e) {
             e.printStackTrace();
         }

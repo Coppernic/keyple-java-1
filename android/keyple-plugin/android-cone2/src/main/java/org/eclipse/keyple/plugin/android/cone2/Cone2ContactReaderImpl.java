@@ -1,10 +1,7 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
 import org.eclipse.keyple.core.seproxy.SeSelector;
-import org.eclipse.keyple.core.seproxy.exception.KeypleApplicationSelectionException;
-import org.eclipse.keyple.core.seproxy.exception.KeypleChannelStateException;
 import org.eclipse.keyple.core.seproxy.exception.KeypleIOReaderException;
-import org.eclipse.keyple.core.seproxy.exception.KeypleReaderException;
 import org.eclipse.keyple.core.seproxy.message.ApduResponse;
 import org.eclipse.keyple.core.seproxy.plugin.AbstractStaticReader;
 import org.eclipse.keyple.core.seproxy.protocol.SeProtocol;
@@ -19,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import fr.coppernic.sdk.ask.Defines;
 import fr.coppernic.sdk.ask.Reader;
 import fr.coppernic.sdk.utils.core.CpcBytes;
+
+import static fr.coppernic.sdk.ask.Defines.RCSC_Ok;
 
 /**
  * Implementation of {@link org.eclipse.keyple.core.seproxy.SeReader} to communicate with SAM
@@ -52,17 +51,22 @@ public class Cone2ContactReaderImpl extends AbstractStaticReader implements Cone
 
     @Override
     protected boolean checkSePresence() {
-        reader.cscSelectSam(samNb, Defines.SAM_PROT_HSP_INNOVATRON);
-        int[] atrLen = new int[1];
-        byte[] atr = new byte[64];
-        int ret = reader.cscResetSam((byte) 0x00, atr, atrLen);
-        if (ret == Defines.RCSC_Ok) {
-            this.atr = new byte[atrLen[0]];
-            System.arraycopy(atr, 0, this.atr, 0, this.atr.length);
-            return true;
-        } else {
-            this.atr = null;
-            return false;
+        try {
+            Cone2AskReader.acquireLock();
+            reader.cscSelectSam(samNb, Defines.SAM_PROT_HSP_INNOVATRON);
+            int[] atrLen = new int[1];
+            byte[] atr = new byte[64];
+            int ret = reader.cscResetSam((byte) 0x00, atr, atrLen);
+            if (ret == RCSC_Ok) {
+                this.atr = new byte[atrLen[0]];
+                System.arraycopy(atr, 0, this.atr, 0, this.atr.length);
+                return true;
+            } else {
+                this.atr = null;
+                return false;
+            }
+        } finally {
+            Cone2AskReader.releaseLock();
         }
     }
 
@@ -72,23 +76,32 @@ public class Cone2ContactReaderImpl extends AbstractStaticReader implements Cone
     }
 
     @Override
-    protected ApduResponse openChannelForAid(SeSelector.AidSelector aidSelector) throws KeypleIOReaderException, KeypleChannelStateException, KeypleApplicationSelectionException {
+    protected ApduResponse openChannelForAid(SeSelector.AidSelector aidSelector) {
         return null;
     }
 
     @Override
     protected void openPhysicalChannel() {
-        reader.cscSelectSam(samNb, Defines.SAM_PROT_HSP_INNOVATRON);
-        int[] atrLen = new int[1];
-        byte[] atr = new byte[64];
-        int ret = reader.cscResetSam((byte) 0x00, atr, atrLen);
-        if (ret == Defines.RCSC_Ok) {
-            this.atr = new byte[atrLen[0]];
-            System.arraycopy(atr, 0, this.atr, 0, this.atr.length);
-        } else {
-            this.atr = null;
+        try {
+            Cone2AskReader.acquireLock();
+            int ret = reader.cscSelectSam(samNb, Defines.SAM_PROT_HSP_INNOVATRON);
+            if (ret != RCSC_Ok) {
+                // TODO throw exception
+            }
+            int[] atrLen = new int[1];
+            byte[] atr = new byte[512];
+            ret = reader.cscResetSam((byte) 0x00, atr, atrLen);
+            if (ret == RCSC_Ok) {
+                this.atr = new byte[atrLen[0]];
+                System.arraycopy(atr, 0, this.atr, 0, this.atr.length);
+            } else {
+                // TODO throw exception
+                this.atr = null;
+            }
+            isPhysicalChannelOpened.set(true);
+        } finally {
+            Cone2AskReader.releaseLock();
         }
-        isPhysicalChannelOpened.set(true);
     }
 
     @Override
@@ -102,7 +115,8 @@ public class Cone2ContactReaderImpl extends AbstractStaticReader implements Cone
     }
 
     @Override
-    protected boolean protocolFlagMatches(SeProtocol protocolFlag) throws KeypleReaderException {
+    protected boolean protocolFlagMatches(SeProtocol protocolFlag) {
+        // TODO : Something must probably done here...
         return true;
     }
 
@@ -120,6 +134,11 @@ public class Cone2ContactReaderImpl extends AbstractStaticReader implements Cone
 
             if (reader != null) {
                 ret = reader.cscIsoCommandSam(apduIn, apduIn.length, answer, answerLen);
+
+                if (ret != Defines.RCSC_Ok) {
+                    // TODO throw exception here
+                }
+
             } else {
                 throw new KeypleIOReaderException("Reader has not been instantiated");
             }

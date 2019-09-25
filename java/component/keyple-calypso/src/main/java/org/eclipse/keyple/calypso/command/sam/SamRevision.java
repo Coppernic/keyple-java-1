@@ -24,7 +24,7 @@ public enum SamRevision {
     S1E("S1E", "E1", (byte) 0x80),
 
     /** The revision of S1D SAM SAM. CLA 0x94 */
-    S1D("S1D", "D?", (byte) 0x94),
+    S1D("S1D", "D.", (byte) 0x94),
 
     /**
      * Joker value matching any application type.

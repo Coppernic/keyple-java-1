@@ -1,7 +1,15 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
-import org.eclipse.keyple.core.seproxy.ReaderPlugin;
+import android.content.Context;
 
-public interface Cone2Plugin extends ReaderPlugin {
+import org.eclipse.keyple.core.seproxy.event.ObservablePlugin;
+
+public interface Cone2Plugin extends ObservablePlugin {
     String PLUGIN_NAME = "Cone2Plugin";
+
+    /**
+     * Powers on/off reader
+     * @param on true on, false off
+     */
+    void power(Context context, boolean on);
 }

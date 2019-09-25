@@ -96,7 +96,7 @@ public class Cone2AskReader {
     /**
      * Resets the instance, this is needed when the reader is powered off for instance.
      */
-    public static void clearInstance () {
+    static void clearInstance () {
         if (uniqueAskReaderInstance.get() != null) {
             uniqueAskReaderInstance.get().cscClose();
             uniqueAskReaderInstance = new WeakReference<Reader>(null);
