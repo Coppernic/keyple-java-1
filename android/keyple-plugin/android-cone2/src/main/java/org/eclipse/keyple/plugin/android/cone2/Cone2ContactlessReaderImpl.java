@@ -222,11 +222,6 @@ public final class Cone2ContactlessReaderImpl extends AbstractThreadedLocalReade
         return true;
     }
 
-    public void simulateCardRemoved() {
-        logCardAbsent = false;
-        isCardDiscovered.set(false);
-    }
-
     public RfidTag enterHuntPhase() {
         // Thread synchronisation
         try {

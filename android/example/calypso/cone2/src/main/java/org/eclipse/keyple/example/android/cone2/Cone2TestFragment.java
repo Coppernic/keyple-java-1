@@ -180,13 +180,6 @@ public class Cone2TestFragment extends Fragment {
             }
         });
 
-        view.findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((Cone2ContactlessReaderImpl)(seReader)).simulateCardRemoved();
-            }
-        });
-
         initTextView();
 
         // [3] We can create a plugin factory
@@ -462,84 +455,12 @@ public class Cone2TestFragment extends Fragment {
                                 "No PO were detected.",
                                 Color.RED);
                     }
-//                    SelectionsResult selectionsResult =
-//                            seSelection.processDefaultSelection(defaultSelectionsResponse);
-//                    if (selectionsResult.hasActiveSelection()) {
-//                        CalypsoPo calypsoPo =
-//                                (CalypsoPo) selectionsResult.getActiveSelection().getMatchingSe();
-//
-//                        mText.append("\nCalypso PO selection: ");
-//                        appendColoredText(mText, "SUCCESS\n", Color.GREEN);
-//                        mText.append("AID: ");
-//                        appendHexBuffer(mText, ByteArrayUtil.fromHex(CalypsoClassicInfo.AID));
-//
-//                        /*
-//                         * Retrieve the data read from the parser updated during the selection
-//                         * process
-//                         */
-//                        ReadRecordsRespPars readEnvironmentParser =
-//                                (ReadRecordsRespPars) selectionsResult.getActiveSelection()
-//                                        .getResponseParser(readEnvironmentParserIndex);
-//
-//                        byte environmentAndHolder[] = (readEnvironmentParser.getRecords())
-//                                .get((int) CalypsoClassicInfo.RECORD_NUMBER_1);
-//
-//                        mText.append("\n\nEnvironment and Holder file: ");
-//                        appendHexBuffer(mText, environmentAndHolder);
-//
-//                        appendColoredText(mText, "\n\n2nd PO exchange:\n", Color.BLACK);
-//                        mText.append("* read the event log file");
-//                        PoTransaction poTransaction =
-//                                new PoTransaction(new PoResource(seReader, calypsoPo));
-//
-//                        /*
-//                         * Prepare the reading order and keep the associated parser for later use
-//                         * once the transaction has been processed.
-//                         */
-//                        int readEventLogParserIndex =
-//                                poTransaction.prepareReadRecordsCmd(CalypsoClassicInfo.SFI_EventLog,
-//                                        ReadDataStructure.SINGLE_RECORD_DATA,
-//                                        CalypsoClassicInfo.RECORD_NUMBER_1,
-//                                        String.format("EventLog (SFI=%02X, recnbr=%d))",
-//                                                CalypsoClassicInfo.SFI_EventLog,
-//                                                CalypsoClassicInfo.RECORD_NUMBER_1));
-//
-//                        /*
-//                         * Actual PO communication: send the prepared read order, then close the
-//                         * channel with the PO
-//                         */
-//                        if (poTransaction.processPoCommands(ChannelState.CLOSE_AFTER)) {
-//                            mText.append("\nTransaction: ");
-//                            appendColoredText(mText, "SUCCESS\n", Color.GREEN);
-//
-//                            /*
-//                             * Retrieve the data read from the parser updated during the transaction
-//                             * process
-//                             */
-//
-//                            ReadRecordsRespPars readEventLogParser =
-//                                    (ReadRecordsRespPars) poTransaction
-//                                            .getResponseParser(readEventLogParserIndex);
-//                            byte eventLog[] = (readEventLogParser.getRecords())
-//                                    .get((int) CalypsoClassicInfo.RECORD_NUMBER_1);
-//
-//                            /* Log the result */
-//                            mText.append("\nEventLog file:\n");
-//                            appendHexBuffer(mText, eventLog);
-//                        }
-//                        appendColoredText(mText, "\n\nEnd of the Calypso PO processing.",
-//                                Color.BLACK);
-//                    } else {
-//                        appendColoredText(mText,
-//                                "The selection of the PO has failed. Should not have occurred due to the MATCHED_ONLY selection mode.",
-//                                Color.RED);
-//                    }
                 } catch (KeypleReaderException e1) {
                     e1.fillInStackTrace();
-                    appendColoredText(mText, "\nException: " + e1.getMessage(), Color.RED);
+                    appendColoredText(mText, "\nException 1: " + e1.getMessage(), Color.RED);
                 } catch (Exception e) {
                     LOG.debug("Exception: " + e.getMessage());
-                    appendColoredText(mText, "\nException: " + e.getMessage(), Color.RED);
+                    appendColoredText(mText, "\nException 2: " + e.getMessage(), Color.RED);
                     e.fillInStackTrace();
                 } catch (NoStackTraceThrowable noStackTraceThrowable) {
                     noStackTraceThrowable.printStackTrace();
