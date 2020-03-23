@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -81,24 +82,34 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
      */
     @Override
     protected SortedSet<SeReader> initNativeReaders() {
-        if ((readers == null || readers.isEmpty())
-                && isReaderPoweredOn != null && isReaderPoweredOn.get()
-                && isReaderInstanceAvailable != null && isReaderInstanceAvailable.get()) {
-            readers = new ConcurrentSkipListSet<SeReader>();
-            Cone2ContactlessReaderImpl contactlessReader = new Cone2ContactlessReaderImpl();
-            readers.add(contactlessReader);
-            Cone2ContactReaderImpl sam1 = new Cone2ContactReaderImpl();
-            sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID
-                    , Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_1);
-            readers.add(sam1);
-            Cone2ContactReaderImpl sam2 = new Cone2ContactReaderImpl();
-            sam2.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID,
-                    Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_2);
-            readers.add(sam2);
-        }
+        // OD: this method is called by the plugin constructor once.
+        // It should return a SortedSet<SeReader> that will be affected to the inner "readers" list.
 
+        if (isReaderPoweredOn != null && isReaderPoweredOn.get()
+                && isReaderInstanceAvailable != null && isReaderInstanceAvailable.get()) {
+            return initConeReaders();
+        }else{
+            //returns an empty list
+            return new ConcurrentSkipListSet<SeReader>() ;
+        }
+    }
+
+    //OD : private method to create a list with your readers
+    private SortedSet<SeReader> initConeReaders(){
+        SortedSet<SeReader> readers = new ConcurrentSkipListSet<SeReader>();
+        Cone2ContactlessReaderImpl contactlessReader = new Cone2ContactlessReaderImpl();
+        readers.add(contactlessReader);
+        Cone2ContactReaderImpl sam1 = new Cone2ContactReaderImpl();
+        sam1.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID
+                , Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_1);
+        readers.add(sam1);
+        Cone2ContactReaderImpl sam2 = new Cone2ContactReaderImpl();
+        sam2.setParameter(Cone2ContactReader.CONTACT_INTERFACE_ID,
+                Cone2ContactReader.CONTACT_INTERFACE_ID_SAM_2);
+        readers.add(sam2);
         return readers;
     }
+
 
     /**
      * Returns the C-One² Reader whatever is the provided name
@@ -109,7 +120,9 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
     @Override
     protected SeReader fetchNativeReader(String name) throws KeypleReaderException {
         // Returns the current reader if it is already listed
-        for (SeReader reader : readers) {
+        //OD : use iterator instead of for loop
+        for (Iterator<SeReader> it = readers.iterator(); it.hasNext();){
+            SeReader reader = it.next();
             if (reader.getName().equals(name)) {
                 return reader;
             }
@@ -129,17 +142,23 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
 
     @Override
     protected SortedSet<String> fetchNativeReadersNames() {
-        initNativeReaders();
+        //initNativeReaders();
+
         SortedSet<String> nativeReadersNames = new ConcurrentSkipListSet<String>();
 
         if (readers != null) {
             if (isReaderPoweredOn.get()) {
+                /*
                 for (SeReader reader : readers) {
                     nativeReadersNames.add(reader.getName());
+                }*/
+                //OD : use iterator instead of for loop
+                for (Iterator<SeReader> it = readers.iterator(); it.hasNext();){
+                    nativeReadersNames.add(it.next().getName());
                 }
+
             }
         }
-
         return nativeReadersNames;
     }
 
@@ -164,6 +183,8 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
                             @Override
                             public void onInstanceAvailable(Reader reader) {
                                 isReaderInstanceAvailable.set(true);
+                                //OD : init Cone Readers in case of success
+                                readers = initConeReaders();
                             }
 
                             @Override
@@ -186,7 +207,8 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
      */
     private void powerOff(Context context) throws KeyplePluginException {
         if (readers != null && !readers.isEmpty()) {
-            for (SeReader reader : readers) {
+            for (Iterator<SeReader> it = readers.iterator(); it.hasNext();){
+                SeReader reader = it.next();
                 if (reader.getName().compareTo(Cone2ContactlessReader.READER_NAME) == 0) {
                     final Cone2ContactlessReaderImpl cone2Reader = (Cone2ContactlessReaderImpl) reader;
                     cone2Reader.stopWaitForCard();
