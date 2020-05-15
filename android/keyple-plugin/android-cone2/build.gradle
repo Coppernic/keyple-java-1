@@ -1,4 +1,4 @@
-def versionKeyple = "0.8.0"
+def versionKeyple = "0.8.1"
 
 if(project.getProperties().containsKey("release") && release=="true"){
     project.version = versionKeyple

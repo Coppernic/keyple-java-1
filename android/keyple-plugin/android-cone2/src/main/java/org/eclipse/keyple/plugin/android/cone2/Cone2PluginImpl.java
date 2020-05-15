@@ -95,8 +95,8 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
     }
 
     //OD : private method to create a list with your readers
-    private SortedSet<SeReader> initConeReaders(){
-        SortedSet<SeReader> readers = new ConcurrentSkipListSet<SeReader>();
+    private ConcurrentSkipListSet<SeReader> initConeReaders(){
+        ConcurrentSkipListSet<SeReader> readers = new ConcurrentSkipListSet<SeReader>();
         Cone2ContactlessReaderImpl contactlessReader = new Cone2ContactlessReaderImpl();
         readers.add(contactlessReader);
         Cone2ContactReaderImpl sam1 = new Cone2ContactReaderImpl();
