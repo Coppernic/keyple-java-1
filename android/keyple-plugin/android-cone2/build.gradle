@@ -1,18 +1,41 @@
-def version = "0.8.1"
+def versionKeyple = "0.8.0"
 
 if(project.getProperties().containsKey("release") && release=="true"){
-    project.version = version
+    project.version = versionKeyple
 }else{
-    project.version = version+'-'+ timestamp+ '-SNAPSHOT'
+    project.version = versionKeyple +'-'+ timestamp+ '-SNAPSHOT'
 }
 
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
-archivesBaseName = "keyple-android-plugin-nfc"
+archivesBaseName = "keyple-android-plugin-cone2"
 
 project.group 'org.eclipse.keyple'
-project.description = 'Keyple Plugin Android Nfc'
+project.description = 'Keyple Plugin Android C-One²'
+
+publishing {
+    publications {
+        art(MavenPublication) {
+            groupId project.group
+            artifactId archivesBaseName
+            version project.version
+
+            android.libraryVariants.all { variant ->
+                if (variant.buildType.name == "release") {
+                    variant.outputs.all {
+                        logger.info "Artifact : ${it.outputFile}"
+                        artifact(it.outputFile)
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
 
 android {
     compileSdkVersion 26
@@ -23,11 +46,12 @@ android {
         targetSdkVersion 26
         versionName project.version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
 
     buildTypes {
         release {
-            minifyEnabled  false
+            minifyEnabled false
         }
     }
 
@@ -86,6 +110,10 @@ android {
         }
 
     }
+
+    packagingOptions {
+        exclude 'META-INF/lib_release.kotlin_module'
+    }
 }
 
 //build javadoc
@@ -108,7 +136,6 @@ task androidSourcesJar(type: Jar) {
     from android.sourceSets.main.java.sourceFiles
 }
 
-//declare javadoc and sources jar as artifacts also
 artifacts {
     archives androidSourcesJar, javadocJar
 }
@@ -125,7 +152,7 @@ if (project.getProperties().containsKey("doSign") && doSign=="true") {
 }
 
 /* from https://central.sonatype.org/pages/gradle.html */
-uploadArchives  {
+uploadArchives {
     repositories {
         mavenDeployer {
             //define local or remote upload repository (based on the doSign variable)
@@ -139,15 +166,11 @@ uploadArchives  {
                 snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
                     authentication(userName: ossrhUsername, password: ossrhPassword)
                 }
-            }else {
-                repository(url: mavenLocal().url)
             }
 
             pom.project {
                 name project.description
                 description project.description
-                url "https://projects.eclipse.org/projects/iot.keyple"
-
                 packaging "aar"
 
                 organization("Eclipse Keyple"){
@@ -189,25 +212,18 @@ uploadArchives  {
                     addMapping(1, configurations.implementation, 'compile')
                     addMapping(2, configurations.testImplementation, 'test')
                     addMapping(3, configurations.androidTestImplementation, 'test')
-
                 }
             }
         }
     }
 }
 
-
 repositories {
     mavenLocal()
     mavenCentral()
     google()
     jcenter()
-}
-
-task installPlugin{
-    group 'keyple'
-    description 'Builds and installs the keyple Android NFC plugin library into maven local repository'
-    dependsOn ':keyple-plugin:keyple-plugin-android-nfc:uploadArchives'
+    maven { url 'https://artifactory.coppernic.fr/artifactory/libs-release' }
 }
 
 dependencies {
@@ -216,27 +232,31 @@ dependencies {
     //keyple-core project
     implementation group: 'org.eclipse.keyple', name: 'keyple-java-core', version: project.version
 
-    //android
     implementation "com.android.support:support-v4:${android_support_version}"
     implementation "com.android.support:appcompat-v7:${android_support_version}"
+    implementation "com.android.support:support-annotations:${android_support_version}"
+    implementation 'com.android.support:multidex:1.0.3'
 
-    //logging
     implementation "org.slf4j:slf4j-api:${slf4japi_version}"
 
+    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.5.9-keyple'
+    implementation 'fr.coppernic.sdk.core:CpcCore:1.8.16'
+    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.18.4'
 
     /*
     Tests
      */
 
-    testImplementation "junit:junit:${junit_version}"
+    //testImplementation group: 'org.eclipse.keyple', name: 'keyple-calypso', version: '1.0.0-RC4'
+    //testImplementation project(path:':java:component:keyple-calypso')
 
     /**Power mock**/
-    androidTestImplementation "org.mockito:mockito-android:${mockito_android_version}"
-    androidTestImplementation "org.powermock:powermock-api-mockito:${powermock_version}"
-    androidTestImplementation "org.powermock:powermock-module-junit4:${powermock_version}"
-
+    testImplementation "junit:junit:${junit_version}"
     testImplementation "org.powermock:powermock-api-mockito:${powermock_version}"
     testImplementation "org.powermock:powermock-module-junit4:${powermock_version}"
     /**End of power mock **/
 
+
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
