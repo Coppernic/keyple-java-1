@@ -120,13 +120,14 @@ public class Cone2ContactReaderImpl extends AbstractLocalReader implements Cone2
 
         try {
             Cone2AskReader.acquireLock();
+            byte sam = 0x1;
             byte[] answer = new byte[260];
             int[] answerLen = new int[1];
 
             int ret;
 
             if (reader != null) {
-                ret = reader.cscIsoCommandSam(apduIn, apduIn.length, answer, answerLen);
+                ret = reader.cscIsoCommandSam(sam, apduIn, answer, answerLen);
 
                 if (ret != Defines.RCSC_Ok) {
                     // TODO throw exception here

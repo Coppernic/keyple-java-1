@@ -24,7 +24,7 @@ android {
     buildToolsVersion '26.0.3'
     defaultConfig {
         applicationId "org.eclipse.keyple.example.calypso.android.nfc"
-        minSdkVersion 19
+        minSdkVersion 27
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"

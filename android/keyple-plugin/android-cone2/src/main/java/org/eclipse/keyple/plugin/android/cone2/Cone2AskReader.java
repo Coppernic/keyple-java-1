@@ -1,7 +1,8 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;

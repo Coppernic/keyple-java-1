@@ -89,7 +89,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         applicationId "org.eclipse.keyple.example.android.cone2"
-        minSdkVersion 19
+        minSdkVersion 27
         targetSdkVersion 26
         multiDexEnabled true
         versionName project.version
@@ -164,13 +164,17 @@ dependencies {
     //slf4j logback for android - https://github.com/tony19/logback-android
     implementation "org.slf4j:slf4j-api:${slf4japi_version}"
     implementation "com.github.tony19:logback-android:${android_logback_version}"
+
     // Timber
-    implementation 'com.jakewharton.timber:timber:4.7.1'
-    implementation 'fr.bipi.treessence:treessence:0.3.0'
+    implementation 'com.jakewharton.timber:timber:5.0.1'
+    implementation 'com.github.bastienpaulfr:Treessence:1.0.5'
 
     /*
     Test
      */
+    // Test
+    implementation 'androidx.test.ext:junit:1.1.5'
+    implementation 'androidx.test.espresso:espresso-core:3.5.1'
     testImplementation "junit:junit:${junit_version}"
     androidTestImplementation "com.android.support.test:runner:${android_support_test}"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:${android_support_espresso}"

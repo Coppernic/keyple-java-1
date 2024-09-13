@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.android.tools.build:gradle:7.4.2'
         classpath "com.diffplug.spotless:spotless-plugin-gradle:3.14.0"
     }
 }
@@ -15,11 +15,6 @@ buildscript {
 ext {
     timestamp = new Date().format('yyyyMMdd')
 }
-
-
-
-
-
 
 subprojects {
 

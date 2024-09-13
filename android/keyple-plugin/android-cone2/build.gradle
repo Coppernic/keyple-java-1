@@ -7,7 +7,6 @@ if(project.getProperties().containsKey("release") && release=="true"){
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 archivesBaseName = "keyple-android-plugin-cone2"
@@ -20,7 +19,7 @@ publishing {
         art(MavenPublication) {
             groupId project.group
             artifactId archivesBaseName
-            version project.version
+            version "${project.version}-$timestamp"
 
             android.libraryVariants.all { variant ->
                 if (variant.buildType.name == "release") {
@@ -38,11 +37,10 @@ publishing {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.3'
+    compileSdkVersion 34
 
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 27
         targetSdkVersion 26
         versionName project.version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -108,11 +106,14 @@ android {
             //destinationDir = file(System.getProperty("user.home") +"/pages")
 
         }
-
     }
 
     packagingOptions {
         exclude 'META-INF/lib_release.kotlin_module'
+        exclude("META-INF/NOTICE")
+        exclude("META-INF/NOTICE.txt")
+        exclude("META-INF/notice.txt")
+        exclude("META-INF/NOTICE.md")
     }
 }
 
@@ -121,7 +122,7 @@ task javadoc(type: Javadoc) {
     failOnError false
     source = android.sourceSets.main.java.sourceFiles
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
+    //classpath += configurations.compile
 }
 
 // build a jar with javadoc
@@ -152,6 +153,7 @@ if (project.getProperties().containsKey("doSign") && doSign=="true") {
 }
 
 /* from https://central.sonatype.org/pages/gradle.html */
+/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -216,13 +218,15 @@ uploadArchives {
             }
         }
     }
-}
+}*/
 
 repositories {
     mavenLocal()
     mavenCentral()
     google()
     jcenter()
+    maven { url 'https://jitpack.io' }
+    maven { url "https://nexus.coppernic.fr/repository/maven-public" }
     maven { url 'https://artifactory.coppernic.fr/artifactory/libs-release' }
 }
 
@@ -230,22 +234,32 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     //keyple-core project
-    implementation group: 'org.eclipse.keyple', name: 'keyple-java-core', version: project.version
+    //implementation group: 'org.eclipse.keyple', name: 'keyple-java-core', version: project.version
 
+    // Android
+    implementation("com.google.android.material:material:1.9.0")
     implementation "com.android.support:support-v4:${android_support_version}"
     implementation "com.android.support:appcompat-v7:${android_support_version}"
     implementation "com.android.support:support-annotations:${android_support_version}"
     implementation 'com.android.support:multidex:1.0.3'
-
     implementation "org.slf4j:slf4j-api:${slf4japi_version}"
 
-    implementation 'fr.coppernic.sdk.ask:CpcAsk:3.5.9-keyple'
-    implementation 'fr.coppernic.sdk.core:CpcCore:1.9.0'
-    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.19.1'
+    // Coppernic
+    implementation 'fr.coppernic.sdk.ask:CpcAsk:4.2.0'
+    implementation 'fr.coppernic.sdk.core:CpcCore:3.3.0'
+    implementation 'fr.coppernic.sdk.cpcutils:CpcUtilsLib:6.21.0'
 
-    /*
-    Tests
-     */
+    // RxJava
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+
+    // Test
+    implementation 'androidx.test.ext:junit:1.1.5'
+    implementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    // Timber
+    implementation 'com.jakewharton.timber:timber:5.0.1'
+    implementation 'com.github.bastienpaulfr:Treessence:1.0.5'
 
     //testImplementation group: 'org.eclipse.keyple', name: 'keyple-calypso', version: '1.0.0-RC4'
     //testImplementation project(path:':java:component:keyple-calypso')
@@ -257,6 +271,4 @@ dependencies {
     /**End of power mock **/
 
 
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }

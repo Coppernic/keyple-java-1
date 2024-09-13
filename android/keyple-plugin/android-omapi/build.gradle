@@ -22,10 +22,9 @@ pmd {
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.3'
 
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 27
         targetSdkVersion 21
         versionName project.version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

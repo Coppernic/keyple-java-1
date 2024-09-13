@@ -1,7 +1,5 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
-import android.support.test.runner.AndroidJUnit4;
-
 import org.eclipse.keyple.core.seproxy.exception.KeypleIOReaderException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +8,8 @@ import fr.coppernic.sdk.utils.core.CpcBytes;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 /**
  * Instrumented test, which will execute on an Android device.

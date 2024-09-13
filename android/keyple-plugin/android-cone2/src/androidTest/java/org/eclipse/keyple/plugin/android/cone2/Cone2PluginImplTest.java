@@ -1,11 +1,10 @@
 package org.eclipse.keyple.plugin.android.cone2;
 
 import android.os.SystemClock;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
 
 import org.eclipse.keyple.core.seproxy.event.ObservablePlugin;
 import org.eclipse.keyple.core.seproxy.event.PluginEvent;
+import org.eclipse.keyple.core.seproxy.exception.KeyplePluginException;
 import org.eclipse.keyple.core.seproxy.exception.KeypleReaderException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +14,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.fail;
+
+import androidx.test.InstrumentationRegistry;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 public class Cone2PluginImplTest extends TestBase {
@@ -36,7 +38,7 @@ public class Cone2PluginImplTest extends TestBase {
      * 6 - When the reader is powered off, we check that isWaitingForCard returns false
      */
     @Test
-    public void waitForCardStoppedAfterPowerOff() {
+    public void waitForCardStoppedAfterPowerOff() throws KeyplePluginException {
         // 1 - A PluginObserver is created and added to the observers of the plugin
         observer = new ObservablePlugin.PluginObserver() {
             @Override
@@ -87,7 +89,7 @@ public class Cone2PluginImplTest extends TestBase {
             assertTrue(reader.isWaitingForCard());
             // 5 - We power off the reader
             plugin.power(InstrumentationRegistry.getTargetContext(), false);
-        } catch (KeypleReaderException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             fail();
         }

@@ -8,7 +8,7 @@ if(project.getProperties().containsKey("release") && release=="true"){
 
 apply plugin: 'java'
 apply plugin: 'java-library'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.6
 archivesBaseName = "keyple-java-calypso"
@@ -67,6 +67,7 @@ if (project.getProperties().containsKey("doSign") && doSign=="true") {
 
 //define local or remote upload repository (based on the doSign variable)
 /* from https://central.sonatype.org/pages/gradle.html */
+/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -86,8 +87,10 @@ uploadArchives {
         }
     }
 }
+ */
 
 //overwrite pom definition values
+/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -141,6 +144,7 @@ uploadArchives {
         }
     }
 }
+ */
 
 task installExtension{
     group 'keyple'

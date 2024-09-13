@@ -30,8 +30,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import fr.coppernic.sdk.ask.Reader;
+import fr.coppernic.sdk.power.api.peripheral.Peripheral;
+import fr.coppernic.sdk.power.impl.access.AccessPeripheral;
 import fr.coppernic.sdk.power.impl.cone.ConePeripheral;
 import fr.coppernic.sdk.utils.core.CpcResult;
+import fr.coppernic.sdk.utils.helpers.OsHelper;
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
 import io.reactivex.CompletableOnSubscribe;
@@ -167,38 +170,48 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
      * @param context Context
      */
     private void powerOn(final Context context) {
-        ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(context, true)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .subscribe(new SingleObserver<CpcResult.RESULT>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
+        Peripheral p = null;
+        if (OsHelper.isCone()) {
+            p = ConePeripheral.RFID_ASK_UCM108_GPIO;
+        } else if (OsHelper.isAccess()){
+            p = AccessPeripheral.RFID_ASK_UCM108_GPIO;
+        }
+        if (p!= null) {
+            p.getDescriptor().power(context, true)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.io())
+                    .subscribe(new SingleObserver<CpcResult.RESULT>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
 
-                    }
+                        }
 
-                    @Override
-                    public void onSuccess(CpcResult.RESULT result) {
-                        isReaderPoweredOn.set(true);
-                        Cone2AskReader.getInstance(context, new Cone2AskReader.ReaderListener() {
-                            @Override
-                            public void onInstanceAvailable(Reader reader) {
-                                isReaderInstanceAvailable.set(true);
-                                //OD : init Cone Readers in case of success
-                                readers = initConeReaders();
-                            }
+                        @Override
+                        public void onSuccess(CpcResult.RESULT result) {
+                            isReaderPoweredOn.set(true);
+                            Cone2AskReader.getInstance(context, new Cone2AskReader.ReaderListener() {
+                                @Override
+                                public void onInstanceAvailable(Reader reader) {
+                                    isReaderInstanceAvailable.set(true);
+                                    //OD : init Cone Readers in case of success
+                                    readers = initConeReaders();
+                                }
 
-                            @Override
-                            public void onError(int error) {
-                                LOG.error("Error trying to get CpcAsk.Reader instance");
-                            }
-                        });
-                    }
+                                @Override
+                                public void onError(int error) {
+                                    LOG.error("Error trying to get CpcAsk.Reader instance");
+                                }
+                            });
+                        }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        LOG.error("Error trying to power on the reader");
-                    }
-                });
+                        @Override
+                        public void onError(Throwable e) {
+                            LOG.error("Error trying to power on the reader");
+                        }
+                    });
+        } else {
+            LOG.error("Error trying to power on the reader");
+        }
     }
 
     /**
@@ -214,43 +227,53 @@ final class Cone2PluginImpl extends AbstractThreadedObservablePlugin implements 
                     cone2Reader.stopWaitForCard();
                     cone2Reader.stopWaitForCardRemoval();
 
+                    Peripheral p = null;
+                    if (OsHelper.isCone()) {
+                        p = ConePeripheral.RFID_ASK_UCM108_GPIO;
+                    } else if (OsHelper.isAccess()){
+                        p = AccessPeripheral.RFID_ASK_UCM108_GPIO;
+                    }
                     // This completable monitors the waitForCardPresent method. while it is running, it
                     // is waiting for it to finish before powering off the reader.
                     // If the
-                    Completable.create(new CompletableOnSubscribe() {
-                        @Override
-                        public void subscribe(CompletableEmitter emitter) {
-                            acquireLock();
-                            releaseLock();
-                            emitter.onComplete();
-                        }
-                    }).timeout(POWER_OFF_TIMEOUT, TimeUnit.MILLISECONDS)
-                            .andThen(ConePeripheral.RFID_ASK_UCM108_GPIO.getDescriptor().power(context, false))
-                            .doOnError(new Consumer<Throwable>() {
-                                @Override
-                                public void accept(Throwable throwable) {
-                                    releaseLock();
-                                    LOG.error("Error trying to power off the reader");
-                                }
-                            })
-                            .subscribe(new SingleObserver<CpcResult.RESULT>() {
-                                @Override
-                                public void onSubscribe(Disposable d) {
+                    if (p!= null) {
+                        Completable.create(new CompletableOnSubscribe() {
+                                    @Override
+                                    public void subscribe(CompletableEmitter emitter) {
+                                        acquireLock();
+                                        releaseLock();
+                                        emitter.onComplete();
+                                    }
+                                }).timeout(POWER_OFF_TIMEOUT, TimeUnit.MILLISECONDS)
+                                .andThen(p.getDescriptor().power(context, false))
+                                .doOnError(new Consumer<Throwable>() {
+                                    @Override
+                                    public void accept(Throwable throwable) {
+                                        releaseLock();
+                                        LOG.error("Error trying to power off the reader");
+                                    }
+                                })
+                                .subscribe(new SingleObserver<CpcResult.RESULT>() {
+                                    @Override
+                                    public void onSubscribe(Disposable d) {
 
-                                }
+                                    }
 
-                                @Override
-                                public void onSuccess(CpcResult.RESULT result) {
-                                    isReaderPoweredOn.set(false);
-                                    Cone2AskReader.clearInstance();
-                                    isReaderInstanceAvailable.set(false);
-                                }
+                                    @Override
+                                    public void onSuccess(CpcResult.RESULT result) {
+                                        isReaderPoweredOn.set(false);
+                                        Cone2AskReader.clearInstance();
+                                        isReaderInstanceAvailable.set(false);
+                                    }
 
-                                @Override
-                                public void onError(Throwable e) {
-                                    LOG.error("Error trying to power off the reader");
-                                }
-                            });
+                                    @Override
+                                    public void onError(Throwable e) {
+                                        LOG.error("Error trying to power off the reader");
+                                    }
+                                });
+                    } else {
+                        LOG.error("Error trying to power off the reader");
+                    }
                 }
             }
         } else {
